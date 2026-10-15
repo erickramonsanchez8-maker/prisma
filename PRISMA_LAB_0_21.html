@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISMA Lab 0.21</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%22176%2076%20314%20276%22%3E%3Cpolygon%20points%3D%22332%2C86%20365%2C149%20331%2C207%20297%2C150%22%20fill%3D%22%230b5cad%22/%3E%3Cpolygon%20points%3D%22296%2C153%20329%2C211%20291%2C277%20225%2C277%22%20fill%3D%22%231e90ff%22/%3E%3Cpolygon%20points%3D%22368%2C153%20437%2C277%20374%2C277%20337%2C213%22%20fill%3D%22%23f5a623%22/%3E%3Cpolygon%20points%3D%22292%2C280%20257%2C341%20187%2C341%20222%2C280%22%20fill%3D%22%2338b6ff%22/%3E%3Cpolygon%20points%3D%22331%2C215%20261%2C341%20402%2C341%20350%2C246%22%20fill%3D%22%2312a8c9%22/%3E%3Cpolygon%20points%3D%22373%2C280%20441%2C280%20476%2C341%20407%2C341%22%20fill%3D%22%23ffcb47%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Hanken+Grotesk:wght@400;500;700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --navy: #0b5cad;
+        --track: #e4edf7;
+        --navy2: #094a8a;
+        --blue: #1e90ff;
+        --cyan: #12a8c9;
+        --sky: #38b6ff;
+        --yellow: #ffcb47;
+        --orange: #f5a623;
+        --ink: #12345b;
+        --white: #ffffff;
+        --bg: #f5f9fd;
+        --card: #ffffff;
+        --text: #12345b;
+        --muted: #64748b;
+        --border: #dbe7f3;
+        --danger: #d94a4a;
+        --warning: #f5a623;
+        --success: #159a78;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+    }
+
+    .app {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+        width: 250px;
+        background: var(--ink);
+        color: white;
+        padding: 24px 16px;
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        overflow-y: auto;
+    }
+
+    .brand { padding: 4px 12px 24px; border-bottom: 1px solid rgba(255,255,255,.12); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 40px; height: 34px; object-fit: contain; background: white; border-radius: 6px; padding: 2px; }
+    .brand-text h1 { font-size: 20px; letter-spacing: 1px; }
+    .brand-text span { color: var(--sky); }
+    .brand-text p { color: #a9c3e6; font-size: 10px; margin-top: 3px; }
+
+    .section-title { color: #7fa0c9; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; margin: 20px 12px 8px; }
+
+    .nav-item {
+        width: 100%; border: none; background: transparent; color: #cddcf0; text-align: left;
+        padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; font-size: 14px; transition: .2s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.08); color: white; }
+    .nav-item.active { background: var(--navy2); color: white; border-left: 3px solid var(--sky); }
+
+    /* MAIN */
+
+    .main { margin-left: 250px; width: calc(100% - 250px); min-height: 100vh; }
+
+    .topbar {
+        height: 72px; background: white; border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+        position: sticky; top: 0; z-index: 10; gap: 16px;
+    }
+
+    .company { font-size: 14px; color: var(--muted); }
+    .company strong { color: var(--text); }
+
+    .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+
+    .btn-import {
+        border: 1px solid var(--border); background: #eef5fc; color: var(--navy);
+        padding: 9px 13px; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: bold;
+    }
+    .btn-import:hover { background: #e0eefb; }
+
+    .content { padding: 32px; max-width: 1500px; margin: auto; }
+
+    .page { display: none; }
+    .page.active { display: block; animation: fade .25s ease; }
+
+    @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .page-header { margin-bottom: 26px; }
+    .page-header h2 { font-size: 27px; margin-bottom: 6px; }
+    .page-header p { color: var(--muted); font-size: 14px; }
+
+    /* CARDS */
+
+    .grid { display: grid; gap: 18px; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+        padding: 22px; box-shadow: 0 2px 8px rgba(10,40,80,.04);
+    }
+
+    .metric-card { position: relative; overflow: hidden; }
+    .metric-card::after {
+        content: ""; position: absolute; right: -20px; top: -20px; width: 70px; height: 70px;
+        border-radius: 50%; background: rgba(18,168,201,.10);
+    }
+
+    .metric-label { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+    .metric-value { font-size: 29px; font-weight: bold; color: var(--navy); }
+    .metric-sub { margin-top: 6px; font-size: 11px; color: var(--muted); }
+
+    /* HEALTH */
+
+    .health-card { display: flex; align-items: center; gap: 28px; margin-bottom: 20px; }
+
+    .score {
+        width: 120px; height: 120px; border-radius: 50%;
+        background: conic-gradient(var(--blue) 0deg 266deg, var(--track) 266deg 360deg);
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        transition: background 0.3s ease;
+    }
+
+    .score-inner { width: 92px; height: 92px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+    .score-number { font-size: 28px; font-weight: bold; color: var(--navy); }
+    .score-text { font-size: 10px; color: var(--muted); }
+
+    .health-info h3 { margin-bottom: 8px; }
+    .health-info p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .health-info small { display: block; margin-top: 10px; color: #92a3b8; font-size: 11px; }
+
+    /* BARS */
+
+    .area { margin-bottom: 17px; }
+    .area-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 7px; }
+    .bar { height: 8px; border-radius: 10px; background: #e6eefa; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, var(--navy), var(--cyan)); border-radius: 10px; transition: width 0.3s ease; }
+
+    /* FINDINGS */
+
+    .finding { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .finding:last-child { border-bottom: none; }
+    .finding-title { font-size: 14px; font-weight: bold; margin-bottom: 6px; }
+    .finding p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-left: 7px; }
+    .high { color: #a22f2f; background: #fbe8e8; }
+    .medium { color: #9a6b12; background: #fff3d9; }
+    .low { color: #0f6b52; background: #e2f5ee; }
+
+    /* RECOMMENDATIONS */
+
+    .recommendation { position: relative; }
+    .rec-number { font-size: 11px; color: var(--cyan); font-weight: bold; margin-bottom: 8px; }
+    .recommendation h3 { margin-bottom: 9px; font-size: 17px; }
+    .recommendation p { color: var(--muted); font-size: 12px; line-height: 1.6; margin-bottom: 15px; }
+    .rec-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .meta { padding: 6px 9px; background: #eef5fc; border-radius: 5px; font-size: 10px; color: #3a5a80; }
+
+    .button { border: none; background: var(--navy); color: white; padding: 10px 15px; border-radius: 7px; cursor: pointer; font-size: 12px; margin-top: 16px; }
+    .button:hover { opacity: .9; }
+    .button.secondary { background: #eef2f6; color: #334155; }
+
+    /* TABLE */
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 13px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+    th { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+
+    /* SIMULATOR */
+
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .input-group { margin-bottom: 17px; }
+    .input-group label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+    .input-group input {
+        width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 11px; outline: none; font-size: 14px;
+    }
+    .input-group input:focus { border-color: var(--cyan); }
+    .input-hint { font-size: 10px; color: var(--danger); margin-top: 4px; min-height: 12px; }
+
+    .result { background: var(--ink); color: white; border-radius: 12px; padding: 28px; }
+    .result small { color: #a9c3e6; }
+    .result h2 { font-size: 38px; margin: 8px 0; }
+    .result-change { color: #5be0c2; font-size: 14px; font-weight: bold; }
+    .result-change.negativo { color: #ff9d8a; }
+
+    .mini-chart { display: flex; align-items: flex-end; gap: 18px; height: 90px; margin: 18px 0 6px; }
+    .mini-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .mini-bar-track { width: 100%; height: 70px; display: flex; align-items: flex-end; background: rgba(255,255,255,.08); border-radius: 6px; overflow: hidden; }
+    .mini-bar { width: 100%; background: linear-gradient(180deg, var(--sky), var(--navy)); border-radius: 6px 6px 0 0; transition: height 0.3s ease; }
+    .mini-bar-label { font-size: 10px; color: #a9c3e6; text-align: center; }
+
+    /* MODAL */
+
+    .modal { display: none; position: fixed; inset: 0; background: rgba(6,20,40,.55); align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal.open { display: flex; }
+    .modal-content { background: white; width: min(700px, 100%); border-radius: 14px; padding: 28px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .close { border: none; background: transparent; font-size: 24px; cursor: pointer; color: var(--muted); }
+    .analysis-box { background: #f2f7fc; border-radius: 8px; padding: 16px; margin-top: 14px; line-height: 1.7; font-size: 13px; }
+
+    textarea.json-input {
+        width: 100%; min-height: 140px; border: 1px solid var(--border); border-radius: 8px;
+        padding: 12px; font-family: monospace; font-size: 12px; resize: vertical;
+    }
+    .import-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .import-tab-btn { border: 1px solid var(--border); background: #f8fafc; padding: 8px 12px; border-radius: 7px; cursor: pointer; font-size: 12px; }
+    .import-tab-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+    .import-msg { font-size: 12px; margin-top: 10px; min-height: 16px; }
+    .import-msg.ok { color: var(--success); }
+    .import-msg.err { color: var(--danger); }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 1000px) {
+        .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: 1fr; }
+        .sim-grid, .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 700px) {
+        .sidebar { width: 205px; }
+        .main { margin-left: 205px; width: calc(100% - 205px); }
+        .content { padding: 20px; }
+        .topbar { padding: 0 20px; }
+        .grid-4 { grid-template-columns: 1fr; }
+        .health-card { flex-direction: column; align-items: flex-start; }
+    }
+    /* ===== PRISMA PRODUCTION ===== */
+    .pd-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 20px; border-bottom:1px solid var(--border); }
+    .pd-tab { border:none; background:transparent; padding:11px 16px; font-size:13px; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; }
+    .pd-tab:hover { color:var(--navy); }
+    .pd-tab.on { color:var(--navy); border-bottom-color:var(--cyan); font-weight:bold; }
+    .pd-tag { display:inline-block; font-size:9px; font-weight:bold; letter-spacing:.4px; padding:2px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+    .pd-tag.real { background:#e2f5ee; color:#0f6b52; } .pd-tag.calc { background:#e3effb; color:#0b5cad; }
+    .pd-tag.est { background:#fff3d9; color:#9a6b12; } .pd-tag.sim { background:#ece6fb; color:#5b3fb0; } .pd-tag.demo { background:#fbe8e8; color:#a22f2f; }
+    .pd-flow { display:flex; align-items:stretch; gap:0; overflow-x:auto; padding:6px 2px 14px; }
+    .pd-node { min-width:168px; flex:1; border:1px solid var(--border); border-radius:10px; padding:14px; background:#fff; position:relative; }
+    .pd-node.cuello { border-color:var(--danger); box-shadow:0 0 0 3px rgba(217,74,74,.12); }
+    .pd-node h4 { font-size:14px; margin-bottom:4px; } .pd-node p { font-size:11px; color:var(--muted); line-height:1.5; }
+    .pd-arrow { align-self:center; padding:0 6px; color:var(--cyan); font-size:20px; }
+    .pd-mini { border:none; background:#eef5fc; color:var(--navy); border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer; margin:8px 4px 0 0; }
+    .pd-mini:hover { background:#dcebf9; } .pd-mini.del { color:var(--danger); }
+    .pd-row { display:flex; align-items:center; gap:10px; margin:7px 0; font-size:12px; } .pd-row .lbl { width:130px; color:var(--muted); }
+    .pd-track { flex:1; height:14px; background:#e6eefa; border-radius:5px; overflow:hidden; } .pd-fill { height:100%; background:var(--cyan); transition:width .3s; }
+    .pd-fill.bad { background:var(--danger); }
+    .pd-form { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+    .pd-form label { font-size:11px; color:var(--muted); display:block; } .pd-form input, .pd-form select, .pd-in { width:100%; border:1px solid var(--border); border-radius:7px; padding:9px; font-size:13px; margin-top:4px; }
+    .pd-form input:focus, .pd-in:focus { outline:none; border-color:var(--cyan); }
+    .pd-scroll { overflow-x:auto; } .pd-up { color:var(--success); font-weight:bold; } .pd-down { color:var(--danger); font-weight:bold; }
+    .pd-toast { position:fixed; right:20px; bottom:20px; background:var(--ink); color:#fff; padding:12px 16px; border-radius:8px; font-size:13px; z-index:200; transition:opacity .3s; }
+    .pd-toast.err { background:var(--danger); } details.pd-acc { border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:10px; background:#fff; } details.pd-acc summary { cursor:pointer; font-weight:bold; font-size:14px; }
+    @media (max-width:700px){ .pd-flow { flex-direction:column; } .pd-arrow { transform:rotate(90deg); align-self:center; } .pd-row .lbl { width:90px; } }
+
+    /* ---------- MODO OSCURO (misma identidad PRISMA, fondos azul profundo) ---------- */
+    [data-theme="dark"] { color-scheme: dark; --bg:#0b1624; --card:#122338; --text:#e6eef9; --ink:#0a1a2e; --muted:#9bb0cc; --border:#24384f; --navy:#2a78c8; --navy2:#1f62a8; --track:#1c3049; }
+    [data-theme="dark"] .topbar, [data-theme="dark"] .modal-content, [data-theme="dark"] .pd-node, [data-theme="dark"] details.pd-acc, [data-theme="dark"] .score-inner { background:var(--card); }
+    [data-theme="dark"] .card { box-shadow:none; }
+    [data-theme="dark"] .metric-value, [data-theme="dark"] .score-number, [data-theme="dark"] .pd-tab:hover, [data-theme="dark"] .pd-tab.on, [data-theme="dark"] .btn-import, [data-theme="dark"] .pd-mini { color:#8cc8ff; }
+    [data-theme="dark"] .btn-import, [data-theme="dark"] .meta, [data-theme="dark"] .analysis-box, [data-theme="dark"] .import-tab-btn, [data-theme="dark"] .pd-mini, [data-theme="dark"] .button.secondary { background:#183049; }
+    [data-theme="dark"] .btn-import:hover, [data-theme="dark"] .pd-mini:hover { background:#1f3b59; }
+    [data-theme="dark"] .meta, [data-theme="dark"] .button.secondary, [data-theme="dark"] .import-tab-btn { color:#cfe0f5; }
+    [data-theme="dark"] .import-tab-btn.active { background:var(--navy); color:#fff; }
+    [data-theme="dark"] .bar, [data-theme="dark"] .pd-track { background:#1c3049; }
+    [data-theme="dark"] .high { color:#ff9d8f; background:#3a1e22; } [data-theme="dark"] .medium { color:#f3c36a; background:#3a2f17; } [data-theme="dark"] .low { color:#6fe0bd; background:#14352d; }
+    [data-theme="dark"] .pd-tag.real { background:#14352d; color:#6fe0bd; } [data-theme="dark"] .pd-tag.calc { background:#17314f; color:#8cc8ff; }
+    [data-theme="dark"] .pd-tag.est { background:#3a2f17; color:#f3c36a; } [data-theme="dark"] .pd-tag.sim { background:#2a2350; color:#c3b4ff; } [data-theme="dark"] .pd-tag.demo { background:#3a1e22; color:#ff9d8f; }
+    [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background:#0e1c2e; color:var(--text); border-color:var(--border); }
+    [data-theme="dark"] .health-info small { color:#7f95b3; }
+    .topbar, .card, .modal-content, body { transition: background-color .2s, color .2s, border-color .2s; }
+    @media (prefers-reduced-motion: reduce) { .topbar, .card, .modal-content, body { transition: none; } }
+
+/* ===== 0.16: editorial ===== */
+:root{--bg:#FAF9F6;--card:#FDFCF9;--text:#1a1814;--muted:#6b675e;--border:#e7e3d9;--ink:#161512;--hl:#ffcb47;--sh:0 24px 48px -26px rgba(22,21,18,.22);--serif:"Instrument Serif",Georgia,"Times New Roman",serif}
+[data-theme="dark"]{--bg:#0A0A0A;--card:#141414;--text:#ece9e1;--muted:#9a968c;--border:#2a2925;--ink:#ece9e1;--sh:none}
+*{font-family:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3,.metric-value,.score-number,.result h2{font-family:var(--serif);font-weight:400}
+body{background:var(--bg);color:var(--text);font-size:15px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:.06;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+[data-theme="dark"] body::before{mix-blend-mode:screen;opacity:.05}
+.app{display:grid;grid-template-columns:276px minmax(0,1fr)}
+.sidebar{position:sticky;top:0;width:auto;height:100vh;padding:36px 20px;background:transparent;color:var(--text);border:0;display:block;overflow-y:auto}
+.brand{border:0;margin:0 0 22px;padding:0 12px}
+.brand img{border-radius:10px}
+.brand-text h1{color:var(--text);font-size:30px;letter-spacing:0}.brand-text span{color:var(--hl)}.brand-text p{color:var(--muted);font-size:12px}
+.section-title{font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted);margin:30px 16px 8px}
+.nav-item{display:block;width:100%;margin:0 0 2px;padding:11px 16px;font-size:15px;background:transparent;color:var(--text);border:0;border-radius:999px;transition:transform .25s,background .25s}
+.nav-item:hover{background:rgba(127,127,127,.12);color:var(--text);transform:translateX(5px)}
+.nav-item.active{background:var(--ink);color:var(--bg);border:0;font-weight:700;transform:none}
+.main{margin:0;width:auto;min-width:0}
+.topbar{position:static;height:auto;background:transparent;border:0;padding:32px 56px 0}
+.company{font-size:13px}.company strong{font-family:var(--serif);font-size:22px;font-weight:400}
+.btn-import{background:transparent;border:0;color:var(--muted);font-weight:500;padding:9px 6px;text-decoration:underline;text-underline-offset:4px}
+.top-actions .btn-import:nth-of-type(2){background:var(--ink);color:var(--bg);text-decoration:none;font-weight:700;padding:13px 22px;border-radius:999px;transition:transform .25s}
+.top-actions .btn-import:nth-of-type(2):hover{transform:scale(1.05)}
+[data-theme="dark"] .btn-import{background:transparent;color:var(--muted)}
+[data-theme="dark"] .top-actions .btn-import:nth-of-type(2){background:var(--ink);color:var(--bg)}
+.content{max-width:1240px;margin:0;padding:64px 56px 120px}
+.page.active{animation:none}
+.page.stacked{margin-top:120px}
+.page-header{display:grid;grid-template-columns:1.7fr 1fr;gap:32px;align-items:end;margin-bottom:56px}
+.page-header h2{display:block;font-size:58px;line-height:1;background:none;padding:0;margin:0}
+.page-header p{font-size:14px;max-width:34ch;margin:0;color:var(--muted)}
+.content{display:flex;flex-direction:column}.page{width:100%}.topbar,.top-actions{flex-wrap:wrap}.card{min-width:0}
+.metric-label{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-height:2.7em}.metric-label .pd-tag{margin-left:0}
+.pd-row .lbl{width:200px;flex:none}
+.card{background:var(--card);border:1px solid var(--border);border-radius:28px;box-shadow:var(--sh);padding:28px}
+.metric-card,.recommendation,.pd-node{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.metric-card:hover,.recommendation:hover,.pd-node:hover{transform:translateY(-5px);box-shadow:0 38px 60px -28px rgba(22,21,18,.32)}
+.metric-card::after{display:none}
+.metric-value{font-size:46px;color:var(--text)}
+.card h3{font-size:26px}
+.score-inner{background:var(--card)}.score-number{color:var(--text);font-size:36px}
+.bar,.pd-track{background:var(--border)}.bar-fill,.pd-fill{background:var(--navy)}.mini-bar{background:var(--hl)}
+.result{background:var(--ink);color:var(--bg);border:0;border-radius:32px;box-shadow:var(--sh)}
+.result h2{color:var(--bg);font-size:56px}.result small,.mini-bar-label{color:var(--muted)}
+.mini-bar-track{background:rgba(127,127,127,.2)}.mini-bar{background:var(--hl)}
+.result-change{color:#7fe3b8}.result-change.negativo{color:#ff9d8a}
+.badge,th,.section-title{text-transform:none;letter-spacing:0}
+th{font-size:12px;color:var(--muted);font-weight:500}
+.meta,.pd-mini{border-radius:999px;background:rgba(127,127,127,.12);color:var(--text)}
+.button{background:transparent;color:var(--text);border:1.5px solid var(--ink);border-radius:999px;padding:10px 20px;transition:transform .25s,background .25s,color .25s}
+.button:hover{background:var(--ink);color:var(--bg);transform:scale(1.04);opacity:1}
+input,select,textarea,.input-group input,.pd-in{border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{background:#141414}
+.pd-node{border-radius:20px;background:var(--card)}details.pd-acc{border-radius:20px;background:var(--card)}
+.pd-tabs{border-color:var(--border)}.pd-tab.on{background:none;color:var(--text);border-bottom-color:var(--ink)}
+.pd-toast{background:var(--ink);color:var(--bg)}
+.modal-content{background:var(--card);border-radius:32px;border:0}
+@media(min-width:1001px){#resumen .grid-4{grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-2{grid-template-columns:minmax(0,1.3fr) minmax(0,.85fr)}}
+@media(max-width:900px){.pd-row .lbl{width:110px}.app{display:block}.sidebar{position:static;height:auto;display:flex;gap:6px;overflow-x:auto;padding:16px}.section-title{display:none}.nav-item{width:auto;white-space:nowrap}.brand{margin:0 12px 0 0;flex:none}.topbar,.content{padding-left:20px;padding-right:20px}.page-header{grid-template-columns:1fr}.page-header h2{font-size:42px}}
+.metric-value{font-size:clamp(28px,3.1vw,44px);overflow-wrap:anywhere}.metric-label{overflow-wrap:anywhere}
+@media(min-width:1001px) and (max-width:1280px){#resumen .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.metric-label .pd-tag{display:table;margin:4px 0 0}.metric-label:has(.pd-tag){display:block;min-height:4.3em}
+.result small,.result .mini-bar-label{color:color-mix(in srgb,var(--bg) 75%,transparent)}
+details.pd-acc summary{font-size:16px;list-style-position:inside}details.pd-acc summary small{display:block;margin:3px 0 0 18px;font-weight:400;font-size:13px;color:var(--muted)}details.pd-acc[open]>summary{margin-bottom:14px}
+.com-hero{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}.com-hero div{padding:20px;border-radius:24px;background:rgba(127,127,127,.09)}.com-hero .mas{background:var(--hl);color:#1a1814}.com-hero small{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}.com-hero .mas small{color:#1a1814}.com-hero b{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.2vw,44px);overflow-wrap:anywhere}
+@media(max-width:700px){.com-hero{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ===== 0.19: movimiento ===== */
+:root{--e:cubic-bezier(.2,.8,.2,1)}
+.sidebar.has-ind .nav-item{position:relative;z-index:1}
+.sidebar.has-ind .nav-item.active,.sidebar.has-ind .nav-item:hover{background:transparent}
+.sidebar.has-ind .nav-item.active{color:var(--bg)}
+.sidebar.has-ind .nav-item:not(.active):hover{background:rgba(127,127,127,.12)}
+.nav-ind{position:absolute;left:0;top:0;z-index:0;background:var(--ink);border-radius:999px;pointer-events:none}
+.nav-ind.ready{transition:transform .55s cubic-bezier(.3,1.25,.4,1),width .4s var(--e),height .4s var(--e)}
+.nav-item:active{transform:scale(.97)}
+.page.leaving{opacity:0;transform:translateY(-10px);transition:opacity .18s ease,transform .18s ease}
+.rv{opacity:0;transform:translateY(30px)}
+.rv.in{opacity:1;transform:none;transition:opacity .75s var(--e) var(--d,0ms),transform .85s var(--e) var(--d,0ms)}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.bar-fill.grow,.pd-fill.grow{transform-origin:left;animation:grow 1s var(--e) .25s both}
+.mini-bar.grow{transform-origin:bottom;animation:growY 1s var(--e) .25s both}
+.card{position:relative;isolation:isolate}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(255,203,71,.17),transparent 62%)}
+.card:hover::before{opacity:1}
+details.pd-acc[open]>*:not(summary){animation:rise .45s var(--e) both}
+details.pd-acc summary{transition:transform .25s var(--e)}details.pd-acc summary:hover{transform:translateX(4px)}
+.button:active,.btn-import:active,.pd-mini:active{transform:scale(.96)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 4px rgba(127,127,127,.16);transition:box-shadow .25s}
+@media(max-width:900px){.sidebar{position:relative}}
+@media(prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+/* ===== 0.20: figuras y vida ===== */
+.bg-fx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;transform:translate(calc(var(--px,0)*-22px),calc(var(--py,0)*-14px));transition:transform .9s ease-out}
+.bg-fx i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.24;will-change:transform}
+.bg-fx i:nth-child(1){width:46vw;height:46vw;left:-8vw;top:-14vw;background:#1e90ff;animation:drift1 26s ease-in-out infinite alternate}
+.bg-fx i:nth-child(2){width:38vw;height:38vw;right:-10vw;top:28vh;background:#12a8c9;animation:drift2 31s ease-in-out infinite alternate}
+.bg-fx i:nth-child(3){width:36vw;height:36vw;left:34vw;bottom:-18vw;background:#ffcb47;opacity:.32;animation:drift1 35s ease-in-out infinite alternate-reverse}
+[data-theme="dark"] .bg-fx i{opacity:.14}
+@keyframes drift1{to{transform:translate(9vw,6vw) scale(1.16)}}
+@keyframes drift2{to{transform:translate(-8vw,-7vw) scale(1.12)}}
+.scroll-bar{position:fixed;top:0;left:0;right:0;height:3px;z-index:1001;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,#0b5cad,#1e90ff,#12a8c9,#ffcb47);transition:transform .12s linear;pointer-events:none}
+.page-header{position:relative;min-height:160px}
+.deco{position:absolute;right:0;top:-6px;width:128px;height:112px}.deco .pm{width:100%;height:100%;overflow:visible}
+@keyframes flow{to{stroke-dashoffset:-46}}@keyframes breath{50%{transform:scale(1.05)}}
+.w,.w i{font-family:var(--serif);font-weight:400}
+.w{display:inline-block;overflow:hidden;vertical-align:bottom;padding:0 .04em .14em;margin:0 -.04em -.14em}
+.w i{display:inline-block;font-style:normal;transform:translateY(110%);animation:wordUp .95s var(--e) both;animation-delay:calc(var(--k)*90ms + 120ms)}
+@keyframes wordUp{to{transform:none}}
+.metric-card::after{display:block;content:"";position:absolute;left:28px;bottom:12px;height:4px;width:32px;border-radius:4px;background:var(--navy);transition:width .55s var(--e)}
+.metric-card:nth-child(3n+2)::after{background:#12a8c9}.metric-card:nth-child(3n)::after{background:var(--hl)}
+.metric-card:hover::after{width:calc(100% - 56px)}
+.metric-card:hover{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-5px)}
+.status-dot{position:relative}.status-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:ping 2.2s ease-out infinite}
+@keyframes ping{to{transform:scale(3.4);opacity:0}}
+.brand img{animation:floaty 5s ease-in-out infinite}@keyframes floaty{50%{transform:translateY(-3px) rotate(-3deg)}}
+@media(max-width:900px){.deco{display:none}.page-header{min-height:0}.bg-fx i{filter:blur(60px)}}
+@media(prefers-reduced-motion:reduce){.w i{transform:none}.bg-fx i{animation:none!important}}
+/* ===== 0.21: identidad de marca ===== */
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{display:block;width:46px;height:40px;flex:none;filter:drop-shadow(0 8px 14px rgba(11,92,173,.28))}.brand-mark .pm{width:100%;height:100%;overflow:visible}
+.brand-text h1.wm{font-family:Poppins,"Trebuchet MS",sans-serif;font-weight:600;font-size:18px;letter-spacing:.34em;color:#0f2f5f;margin:0}
+[data-theme="dark"] .brand-text h1.wm{color:var(--text)}
+.brand-text p{letter-spacing:.14em;text-transform:uppercase;font-size:10px;margin-top:3px}
+.rail-tag{position:absolute;left:32px;bottom:28px;display:grid;gap:9px;font:500 11px Poppins,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#2f6fb3}
+[data-theme="dark"] .rail-tag{color:#7fb6e8}
+.rail-tag span::before{content:"";display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:10px;transform:rotate(45deg);background:var(--c);animation:tick 3.6s ease-in-out infinite;animation-delay:calc(var(--i)*.6s)}
+@keyframes tick{50%{transform:rotate(45deg) scale(1.55)}}
+.pm .f{transform-box:fill-box;transform-origin:center;translate:calc(var(--px,0)*var(--d)*1px) calc(var(--py,0)*var(--d)*1px);transition:translate .55s ease-out,rotate .5s var(--e),scale .5s var(--e)}
+.pm.go .f{animation:pmIn 1.1s cubic-bezier(.2,1.2,.3,1) calc(var(--k)*90ms) both,pmWave 6s ease-in-out calc(1.5s + var(--k)*.4s) infinite}
+@keyframes pmIn{from{opacity:0;transform:translate(calc(var(--dx)*60px),calc(var(--dy)*60px)) rotate(calc(var(--dx)*24deg)) scale(.3)}to{opacity:1;transform:none}}
+@keyframes pmWave{50%{transform:translate(calc(var(--dx)*2.6px),calc(var(--dy)*2.6px))}}
+.pm:hover .f{translate:calc(var(--dx)*8px + var(--px,0)*var(--d)*1px) calc(var(--dy)*8px + var(--py,0)*var(--d)*1px);rotate:calc(var(--dx)*5deg);scale:1.05}
+.pm .sheen{transform-origin:0 0;animation:sheen 7s ease-in-out 2.2s infinite}
+@keyframes sheen{0%{transform:translateX(120px) skewX(-20deg)}35%,100%{transform:translateX(540px) skewX(-20deg)}}
+#pmSplash{position:fixed;inset:0;z-index:2000;background:var(--bg);display:grid;place-items:center;transition:opacity .8s var(--e),transform .8s var(--e)}
+#pmSplash.out{opacity:0;transform:scale(1.05);pointer-events:none}
+.sp-in{display:grid;justify-items:center;gap:26px}
+.sp-mark{width:min(34vw,220px);height:auto;overflow:visible;filter:drop-shadow(0 24px 40px rgba(11,92,173,.25))}
+.sp-word{display:flex}.sp-word b{font:600 34px Poppins,"Trebuchet MS",sans-serif;letter-spacing:.42em;color:#0f2f5f;opacity:0;transform:translateY(16px);animation:spl .8s var(--e) calc(1s + var(--i)*80ms) forwards}.sp-word b:last-child{margin-right:-.42em}
+[data-theme="dark"] .sp-word b{color:var(--text)}
+.sp-tag{font:500 12px Poppins,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#2f6fb3;opacity:0;animation:spl .9s var(--e) 1.7s forwards}
+@keyframes spl{to{opacity:1;transform:none}}
+@media(max-width:900px){.rail-tag{display:none}.brand-text{display:none}}
+@media(prefers-reduced-motion:reduce){.pm .f,.pm .sheen{animation:none!important}}
+</style>
+<script>(function(){try{var t=localStorage.getItem("prisma_lab_theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}})();</script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar"><div class="brand"><span class="brand-mark" id="brandMark"></span><div class="brand-text"><h1 class="wm">PRISMA</h1><p>Lab 0.21</p></div></div><div class="section-title">Cómo va la empresa</div><button class="nav-item active" onclick="showPage('resumen', this)">Resumen</button><button class="nav-item" onclick="showPage('finanzas', this)">El dinero</button><div class="section-title">De dónde sale</div><button class="nav-item" onclick="showPage('ventas', this)">Ventas</button><button class="nav-item" onclick="showPage('produccion', this)">Producción</button><button class="nav-item" onclick="showPage('ambiente', this)">Digital y ambiente</button><div class="section-title">Qué hacer ahora</div><button class="nav-item" onclick="showPage('consejos', this)">Hallazgos y consejos</button><button class="nav-item" onclick="showPage('simulacion', this)">Probar cambios</button><div class="rail-tag"><span style="--c:#1e90ff;--i:0">Marketing</span><span style="--c:#12a8c9;--i:1">Finanzas</span><span style="--c:#ffcb47;--i:2">Sustentabilidad</span></div></aside>
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+        <header class="topbar">
+            <div class="company">
+                Empresa analizada:
+                <strong id="nombreEmpresa">Cartonera XYZ (datos demo)</strong>
+            </div>
+
+            <div class="top-actions">
+                <button class="btn-import" id="themeBtn" onclick="toggleTheme()" aria-label="Cambiar entre modo claro y oscuro">Modo oscuro</button>
+                <button class="btn-import" onclick="openImportModal()">Cargar Archivo PRISMA (.json)</button>
+                <div class="status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Datos de ejemplo</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+
+            <!-- RESUMEN -->
+
+            <section id="resumen" class="page active">
+
+                <div class="page-header">
+                    <h2>Resumen</h2>
+                    <p>Así va la empresa hoy.</p>
+                </div>
+
+                <div class="card health-card">
+                    <div class="score" id="scoreRing">
+                        <div class="score-inner">
+                            <div class="score-number" id="scoreNumber">74</div>
+                            <div class="score-text">/ 100</div>
+                        </div>
+                    </div>
+
+                    <div class="health-info">
+                        <h3>Cómo va la empresa</h3>
+                        <p id="resumenTexto">
+                            Vemos que se puede mejorar sobre todo en el control del dinero, en cómo se trabaja y en usar más herramientas digitales. Esto sale de las respuestas del diagnóstico.
+                        </p>
+                        <small id="scoreNota">Este puntaje es de ejemplo. No viene de un Archivo PRISMA real.</small>
+                    </div>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="card metric-card">
+                        <div class="metric-label">Ventas mensuales</div>
+                        <div class="metric-value" id="resVentas">$700k</div>
+                        <div class="metric-sub" id="resVentasSub">Lo que respondió la empresa</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="metric-label">Ganancia de cada mes (aprox.)</div>
+                        <div class="metric-value" id="resUtilidad">$150k</div>
+                        <div class="metric-sub">Antes de probar cambios</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="metric-label">Cosas importantes que encontramos</div>
+                        <div class="metric-value" id="resHallazgosCount">4</div>
+                        <div class="metric-sub">Encontradas por PRISMA</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="metric-label">Recomendaciones</div>
+                        <div class="metric-value">4</div>
+                        <div class="metric-sub">Consejos para mejorar</div>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3 style="margin-bottom:22px;">Estado por área</h3>
+                        <div id="areasContainer"></div>
+                        <p style="color:var(--muted);font-size:11px;margin-top:6px;">
+                            Qué tan completa está la información de cada área. Más alto es mejor.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom:8px;">Lo más importante</h3>
+                        <div id="findingsPreview"></div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- FINANZAS -->
+
+            <section id="finanzas" class="page">
+                <div class="page-header">
+                    <h2>El dinero de la empresa</h2>
+                    <p>Cómo está el dinero de la empresa.</p>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card metric-card">
+                        <div class="metric-label">Ventas mensuales</div>
+                        <div class="metric-value" id="finVentas">$700,000</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="metric-label">Gastos registrados</div>
+                        <div class="metric-value" id="finCostos">$550,000</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="metric-label">Ganancia aproximada</div>
+                        <div class="metric-value" id="finUtilidad">$150,000</div>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="card">
+                    <h3 style="margin-bottom:18px;">Números del dinero</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Qué es</th><th>Cuánto</th><th>Qué significa</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Ganancia por cada $100 vendidos</td>
+                                <td id="finMargen">21.4%</td>
+                                <td>Conviene revisar en qué se gasta</td>
+                            </tr>
+                            <tr>
+                                <td>Gasto sobre las ventas</td>
+                                <td id="finCostosVentas">78.6%</td>
+                                <td>Es alto</td>
+                            </tr>
+                            <tr>
+                                <td>Cómo lleva las cuentas</td>
+                                <td>A mano</td>
+                                <td>Se puede pasar a la computadora</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <br>
+
+                <div class="card">
+                    <h3 style="margin-bottom:8px;">Cuentas de la empresa</h3>
+                    <p style="color:var(--muted);font-size:12px;margin-bottom:14px;">
+                        PRISMA Lab lo calcula con las ventas, los gastos, la deuda y el dinero disponible.
+                        Se actualiza solo cuando cambias los números.
+                    </p>
+
+                    <div class="grid grid-2" style="margin-bottom:16px;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Deuda total actual</label>
+                            <input id="deuda" type="number" min="0" value="180000" oninput="onEditarDeudaLiquidez()">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Dinero disponible (efectivo + bancos)</label>
+                            <input id="liquidez" type="number" min="0" value="90000" oninput="onEditarDeudaLiquidez()">
+                        </div>
+                    </div>
+
+                    <div id="analisisFinancieroContainer"></div>
+                </div>
+            </section>
+
+            <!-- MARKETING -->
+
+            
+
+            <section id="comercial" class="page">
+                <div class="page-header">
+                    <h2>Ventas y crecimiento</h2>
+                    <p>Cómo vende la empresa, qué productos tiene y cómo puede crecer. Necesita el Archivo PRISMA del Diagnóstico 1.2.</p>
+                </div>
+                <div id="comercialInfo"></div>
+                <div class="card" style="margin-top:20px;">
+                    <h3>Prueba cambios en tus ventas</h3>
+                    <p style="color:var(--muted);font-size:13px;line-height:1.6;margin:8px 0 16px;">Mira cuánto cambiaría la ganancia de cada mes si haces cambios en tus ventas.</p>
+                    <div id="comercialSim" style="margin-top:20px;"></div>
+<details class="pd-acc" style="margin-top:20px;"><summary>Cambiar los números<small>Mueve estas 10 opciones y arriba se actualiza el resultado</small></summary><div class="grid grid-3" style="gap:14px;">
+                        <label>Clientes que vuelven a comprar: subir (puntos %)<input id="cRet" type="number" value="5" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Nuevo lugar donde vender: cuánto vendería (% de tus ventas de hoy)<input id="cCanalPct" type="number" value="10" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Nuevo lugar donde vender: lo que cuesta al mes ($)<input id="cCanalCosto" type="number" value="3000" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Gastar menos en entregas (puntos % de las ventas)<input id="cDist" type="number" value="2" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Clientes nuevos en otra zona: cuánto vendería (% de tus ventas de hoy)<input id="cMerPct" type="number" value="8" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Clientes nuevos en otra zona: lo que tendrías que invertir ($)<input id="cMerInv" type="number" value="30000" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Producto nuevo: cuánto vendería (% de tus ventas de hoy)<input id="cProdPct" type="number" value="5" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Producto nuevo: ganancia por cada $100 vendidos (%)<input id="pMargen" type="number" value="30" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Si el producto que más vendes baja, ¿cuánto? (%)<input id="pCaida" type="number" value="30" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                        <label>Producto que casi no se vende: cuánto rematar (%)<input id="pLiq" type="number" value="50" oninput="simularComercial()" style="width:100%;padding:8px;"></label>
+                    </div></details>
+                </div>
+            </section>
+
+            <!-- OPERACIONES -->
+
+            
+
+            <!-- DIGITAL -->
+
+            <section id="digital" class="page">
+                <div class="page-header">
+                    <h2>Herramientas digitales</h2>
+                    <p>Qué tanto usa la empresa la computadora y las herramientas digitales.</p>
+                </div>
+
+                <div class="card">
+                    <div class="metric-label">Nivel (aprox.)</div>
+                    <div class="metric-value" id="digNivel">53 / 100</div>
+                    <br>
+                    <div class="area">
+                        <div class="area-head"><span>Registros en computadora</span><strong>40%</strong></div>
+                        <div class="bar"><div class="bar-fill" style="width:40%"></div></div>
+                    </div>
+                    <div class="area">
+                        <div class="area-head"><span>Tareas que se hacen solas</span><strong>30%</strong></div>
+                        <div class="bar"><div class="bar-fill" style="width:30%"></div></div>
+                    </div>
+                    <div class="area">
+                        <div class="area-head"><span>Qué tan fácil es encontrar los datos</span><strong>65%</strong></div>
+                        <div class="bar"><div class="bar-fill" style="width:65%"></div></div>
+                    </div>
+                </div>
+                <div id="dgBody" style="margin-top:20px"></div>
+            </section>
+
+            <!-- SUSTENTABILIDAD -->
+
+            <section id="sustentabilidad" class="page">
+                <div class="page-header">
+                    <h2>Ahorro y cuidado del ambiente</h2>
+                    <p>Cómo se usan los materiales y qué se desperdicia.</p>
+                </div>
+
+                <div id="suBody" style="margin-top:20px"></div>
+            </section>
+
+            <!-- CONTEXTO -->
+
+            <section id="contexto" class="page">
+                <div class="page-header">
+                    <h2>Datos de la empresa</h2>
+                    <p>Datos generales que ayudan a entender mejor los resultados.</p>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <table>
+                            <tbody>
+                                <tr><td>Años de la empresa</td><td id="ctxAntiguedad">10 años</td></tr>
+                                <tr><td>A qué se dedica</td><td id="ctxSector">Empaque y cartón</td></tr>
+                                <tr><td>Personal</td><td id="ctxPersonal">10 trabajadores</td></tr>
+                                <tr><td>Producto principal</td><td id="ctxProducto">No especificado</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h3>Lo que quiere lograr la empresa</h3>
+                        <p id="ctxObjetivo" style="color:var(--muted);font-size:13px;line-height:1.7;margin-top:12px;">
+                            Ganar más y que la empresa funcione mejor.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HALLAZGOS -->
+
+            <section id="hallazgos" class="page">
+                <div class="page-header">
+                    <h2>Lo que encontramos</h2>
+                    <p>Cosas importantes que vimos en las respuestas del diagnóstico.</p>
+                </div>
+
+                <div class="grid grid-2" id="hallazgosContainer"></div>
+            </section>
+
+            <!-- RECOMENDACIONES -->
+
+            <section id="recomendaciones" class="page">
+                <div class="page-header">
+                    <h2>Consejos</h2>
+                    <p>Pasos que sugerimos. No es una promesa de resultado.</p>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card recommendation">
+                        <div class="rec-number">CONSEJO 01</div>
+                        <h3>Revisar cómo se empaqueta</h3>
+                        <p>Medir cuánto tarda cada paso, ver dónde se espera de más y repartir mejor el trabajo.</p>
+                        <div class="rec-meta"><span class="meta">Ayuda: mucho</span><span class="meta">Dificultad: regular</span><span class="meta">Operaciones</span></div>
+                        <button class="button" onclick="openModal('Revisar cómo se empaqueta','Esta idea sale de ver que un paso puede estar frenando todo. Antes de cambiar algo, mide tiempos y carga de trabajo para saber qué paso frena de verdad.')">Ver más</button>
+                    </div>
+
+                    <div class="card recommendation">
+                        <div class="rec-number">CONSEJO 02</div>
+                        <h3>Controlar mejor los gastos</h3>
+                        <p>Separar los gastos por producto para saber en cuáles se gana más y en cuáles menos.</p>
+                        <div class="rec-meta"><span class="meta">Ayuda: mucho</span><span class="meta">Dificultad: poca</span><span class="meta">Finanzas</span></div>
+                        <button class="button" onclick="openModal('Controlar mejor los gastos','Se gasta mucho comparado con lo que se vende. Separar los gastos por tipo ayuda a ver cuáles pesan más en la ganancia.')">Ver más</button>
+                    </div>
+
+                    <div class="card recommendation">
+                        <div class="rec-number">CONSEJO 03</div>
+                        <h3>Llevar los registros en la computadora</h3>
+                        <p>Juntar la información en un solo lugar para no repetir datos y encontrarla más fácil.</p>
+                        <div class="rec-meta"><span class="meta">Ayuda: regular</span><span class="meta">Dificultad: regular</span><span class="meta">Digitalización</span></div>
+                        <button class="button" onclick="openModal('Llevar registros en la computadora','Tener los datos en la computadora los hace más fáciles de encontrar y más confiables. Primero decide qué datos son más importantes y qué tarea a mano te quita más tiempo.')">Ver más</button>
+                    </div>
+
+                    <div class="card recommendation">
+                        <div class="rec-number">CONSEJO 04</div>
+                        <h3>Revisar cómo se ponen los precios</h3>
+                        <p>Antes de cambiar precios, comparar lo que cuesta, lo que se quiere ganar y lo que cobra la competencia.</p>
+                        <div class="rec-meta"><span class="meta">Ayuda: mucho</span><span class="meta">Dificultad: regular</span><span class="meta">Marketing</span></div>
+                        <button class="button" onclick="openModal('Revisar cómo se ponen los precios','Poner precios solo mirando a la competencia puede no cubrir lo que realmente cuesta. PRISMA Lab puede comparar distintos precios y cuánto ganarías con cada uno.')">Ver más</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SIMULACION -->
+
+            <section id="simulacion" class="page">
+                <div class="page-header">
+                    <h2>Probar cambios</h2>
+                    <p>Cambia los números y mira qué pasaría con la ganancia. El resultado cambia mientras escribes.</p>
+                </div>
+
+                <div class="sim-grid">
+                    <div class="card">
+                        <h3 style="margin-bottom:20px;">Si hicieras estos cambios</h3>
+
+                        <div class="input-group">
+                            <label>Ventas mensuales actuales</label>
+                            <input id="ventas" type="number" min="0" value="700000" oninput="simular()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Gastos que suben con las ventas (hoy)</label>
+                            <input id="variables" type="number" min="0" value="400000" oninput="simular()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Gastos que siempre pagas (hoy)</label>
+                            <input id="fijos" type="number" min="0" value="150000" oninput="simular()">
+                            <div class="input-hint" id="hintCostos"></div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Cuánto cambiarían las ventas (%)</label>
+                            <input id="varVentas" type="number" min="-100" value="5" oninput="simular()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Cuánto bajarían los gastos que suben con las ventas (%)</label>
+                            <input id="varVariables" type="number" min="-100" max="100" value="8" oninput="simular()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Cuánto bajarían los gastos fijos (%)</label>
+                            <input id="varFijos" type="number" min="-100" max="100" value="0" oninput="simular()">
+                        </div>
+                    </div>
+
+                    <div class="result">
+                        <small>GANANCIA APROXIMADA</small>
+                        <h2 id="resultado">$229,000</h2>
+                        <div id="cambio" class="result-change">+52.7% vs. situación actual</div>
+
+                        <div class="mini-chart">
+                            <div class="mini-bar-wrap">
+                                <div class="mini-bar-track"><div class="mini-bar" id="barUtilidadActual" style="height:0%"></div></div>
+                                <div class="mini-bar-label">Ganancia de hoy</div>
+                            </div>
+                            <div class="mini-bar-wrap">
+                                <div class="mini-bar-track"><div class="mini-bar" id="barUtilidadEscenario" style="height:0%"></div></div>
+                                <div class="mini-bar-label">Ganancia con los cambios</div>
+                            </div>
+                            <div class="mini-bar-wrap">
+                                <div class="mini-bar-track"><div class="mini-bar" id="barMargenActual" style="height:0%"></div></div>
+                                <div class="mini-bar-label">Ganancia por cada $100 (hoy)</div>
+                            </div>
+                            <div class="mini-bar-wrap">
+                                <div class="mini-bar-track"><div class="mini-bar" id="barMargenEscenario" style="height:0%"></div></div>
+                                <div class="mini-bar-label">Ganancia por cada $100 (con cambios)</div>
+                            </div>
+                        </div>
+
+                        <div id="equilibrioSimulacion" style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);"></div>
+
+                        <small style="display:block;margin-top:14px;">
+                            Es un cálculo aproximado con los datos cargados. No es una promesa de resultado.
+                        </small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRODUCCIÓN (PRISMA Production) -->
+
+            <section id="produccion" class="page">
+                <div class="page-header">
+                    <h2>Producción <span id="pdDemoTag"></span></h2>
+                    <p>PRISMA Production: dónde se frena el trabajo, cuánto cuesta producir y qué pasaría si cambias algo.</p>
+                </div>
+                <div class="pd-tabs" id="pdTabs"></div>
+                <div id="pdBody"></div>
+            </section>
+
+
+            <section id="growth" class="page">
+                <div class="page-header">
+                    <h2>De dónde vienen los clientes</h2>
+                    <p>Qué trae las ventas y qué pasaría si cambias el precio, la publicidad o los cierres.</p>
+                </div>
+                <div id="grBody"></div>
+            </section>
+
+            <section id="productos" class="page">
+                <div class="page-header">
+                    <h2>Analizador de producto</h2>
+                    <p>¿Qué productos realmente dejan dinero? Usa los datos de Producción y no los pide otra vez.</p>
+                </div>
+                <div id="prBody"></div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL DE ANÁLISIS -->
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Análisis</h2>
+            <button class="close" onclick="closeModal()">×</button>
+        </div>
+        <div id="modalBody" class="analysis-box"></div>
+    </div>
+</div>
+
+<!-- MODAL DE IMPORTACIÓN -->
+
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Cargar Archivo PRISMA</h2>
+            <button class="close" onclick="closeImportModal()">×</button>
+        </div>
+
+        <p style="color:var(--muted);font-size:12px;margin-bottom:14px;">
+            Sube el archivo .prisma.json que sacaste de PRISMA Diagnóstico, o pega lo que trae adentro.
+        </p>
+
+        <div class="import-tabs">
+            <button class="import-tab-btn active" id="tabFile" onclick="switchImportTab('file')">Subir archivo</button>
+            <button class="import-tab-btn" id="tabPaste" onclick="switchImportTab('paste')">Pegar el texto</button>
+        </div>
+
+        <div id="importFilePanel">
+            <input type="file" id="fileInput" accept=".json,application/json" onchange="handleFileSelect(event)">
+        </div>
+
+        <div id="importPastePanel" style="display:none;">
+            <textarea class="json-input" id="jsonPasteArea" placeholder="Pega aquí el contenido del Archivo PRISMA (.json)"></textarea>
+            <button class="button" onclick="handlePasteImport()">Usar lo que pegué</button>
+        </div>
+
+        <div class="import-msg" id="importMsg"></div>
+
+        <button class="button secondary" style="margin-top:18px;" onclick="restaurarDemo()">Volver a los datos de ejemplo</button>
+    </div>
+</div>
+
+<script>
+
+    /* ------------------------------------------------------------------
+       ESTADO CENTRAL
+       Estructura demo por defecto. Al importar un Archivo PRISMA real
+       (formato "Archivo PRISMA", version "1.1", tal como lo exporta
+       PRISMA Diagnóstico), aplicarArchivoPrisma() reconstruye este
+       mismo objeto de estado a partir del esquema real.
+    ------------------------------------------------------------------- */
+
+    const DEMO_STATE = {
+        empresa: "Cartonera XYZ (datos demo)",
+        score: 74,
+        scoreNota: "Este puntaje es de ejemplo. No viene de un Archivo PRISMA real.",
+        ventas: 700000,
+        variables: 400000,
+        fijos: 150000,
+        deuda: 180000,
+        liquidez: 90000,
+        metas: { utilidadMinPct: 15, variablesMaxPct: 60, fijosMaxPct: 25, deudaMaxPct: 30 },
+        areas: { finanzas: 78, marketing: 61, operaciones: 70, digitalizacion: 53, sustentabilidad: 69, distribucion: 60 },
+        contexto: { antiguedad: "10 años", sector: "Empaque y cartón", personal: 10, producto: "No especificado", objetivo: "Ganar más y que la empresa funcione mejor." },
+        hallazgosBase: [
+            { titulo: "Los gastos son altos", nivel: "alta", descripcion: "Se gasta mucho comparado con lo que se vende.", tags: ["Dinero", "Cómo se trabaja"] },
+            { titulo: "Un paso frena la producción", nivel: "alta", descripcion: "El empaquetado hace más lento todo el trabajo.", tags: ["Cómo se trabaja", "Ventas"] },
+            { titulo: "Todo se anota a mano", nivel: "media", descripcion: "Casi todo se apunta a mano.", tags: ["Herramientas digitales", "Dinero"] },
+            { titulo: "Precios según la competencia", nivel: "media", descripcion: "Se pueden poner mejores precios si se piensa también en lo que cuesta y lo que se gana.", tags: ["Ventas", "Dinero"] }
+        ]
+    };
+
+    let state = JSON.parse(JSON.stringify(DEMO_STATE));
+
+    const NIVEL_TXT = { alta: 'Muy importante', media: 'Importante', baja: 'Está bien' };
+
+    const AREA_LABELS = {
+        finanzas: "Dinero",
+        marketing: "Ventas y publicidad",
+        operaciones: "Cómo se trabaja",
+        digitalizacion: "Herramientas digitales",
+        sustentabilidad: "Ahorro y cuidado del ambiente",
+        distribucion: "Cómo vende y cómo puede crecer"
+    };
+
+    // Nombres de área tal como los usa PRISMA Diagnóstico en su exportación real.
+    const AREA_KEY_DESDE_NOMBRE_REAL = {
+        "Finanzas": "finanzas",
+        "Marketing y ventas": "marketing",
+        "Operaciones": "operaciones",
+        "Digitalización": "digitalizacion",
+        "Eficiencia y sostenibilidad": "sustentabilidad",
+        "Distribución y expansión": "distribucion"
+    };
+
+    const NIVEL_A_LAB = { ok: "baja", atencion: "media", alerta: "alta" };
+
+    /* ------------------------------------------------------------------
+       NAVEGACIÓN
+    ------------------------------------------------------------------- */
+
+    const GRUPOS = { resumen:['resumen'], finanzas:['finanzas'], ventas:['comercial','growth'], produccion:['produccion','productos'], ambiente:['digital','sustentabilidad'], consejos:['hallazgos','recomendaciones','contexto'], simulacion:['simulacion'] };
+    const NAV_RM = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let navBusy = false, navNext = null, navIO = null;
+    function moveNavInd(btn) {
+        const ind = document.querySelector('.nav-ind'); if (!ind || !btn) return;
+        ind.style.width = btn.offsetWidth + 'px'; ind.style.height = btn.offsetHeight + 'px';
+        ind.style.transform = `translate(${btn.offsetLeft}px,${btn.offsetTop}px)`;
+    }
+    function countUp(el, delay) {
+        const t = el.textContent.trim(), m = t.match(/^(\D*?)(\d[\d,]*\.?\d*)([\s\S]*)$/);
+        if (!m || el.children.length) return;
+        const num = m[2], dec = (num.split('.')[1] || '').length, comma = num.includes(','), val = parseFloat(num.replace(/,/g, ''));
+        if (!(val > 0)) return;
+        const fmt = v => { const [i, d] = v.toFixed(dec).split('.'); return (comma ? i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : i) + (d ? '.' + d : ''); };
+        let last = m[1] + fmt(0) + m[3]; el.textContent = last;
+        const t0 = performance.now() + delay;
+        const step = now => {
+            if (el.textContent !== last) return;
+            const p = Math.min(1, Math.max(0, (now - t0) / 900));
+            last = p >= 1 ? t : m[1] + fmt(val * (1 - Math.pow(1 - p, 3))) + m[3]; el.textContent = last;
+            if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    }
+    function splitTitle(h) {
+        const t = h.textContent.trim(); h.setAttribute('aria-label', t);
+        h.innerHTML = t.split(/\s+/).map((w, i) => `<span class="w" aria-hidden="true"><i style="--k:${i}">${w}</i></span> `).join('');
+    }
+    function animarPagina() {
+        if (NAV_RM()) return;
+        if (navIO) navIO.disconnect();
+        const pages = [...document.querySelectorAll('.page.active')], blocks = [];
+        pages.forEach(p => {
+            p.querySelectorAll('.page-header > *').forEach(x => { if (x.tagName === 'H2' && !x.children.length) splitTitle(x); else if (!x.classList.contains('deco')) blocks.push(x); });
+            p.querySelectorAll('.card, details.pd-acc, .pd-tabs, .com-hero, .result').forEach(x => { if (!x.parentElement.closest('.card, details.pd-acc')) blocks.push(x); });
+        });
+        navIO = new IntersectionObserver(es => es.forEach(en => {
+            if (!en.isIntersecting) return;
+            const el = en.target; navIO.unobserve(el); el.classList.add('in');
+            setTimeout(() => { el.classList.remove('rv', 'in'); el.style.removeProperty('--d'); }, 1700);
+        }), { threshold: 0.06 });
+        let n = 0;
+        blocks.forEach(el => {
+            el.classList.remove('in'); el.classList.add('rv');
+            el.style.setProperty('--d', (el.getBoundingClientRect().top < innerHeight ? Math.min(n++, 9) * 70 : 0) + 'ms');
+            navIO.observe(el);
+        });
+        pages.forEach(p => p.querySelectorAll('.pm').forEach(m => { m.classList.remove('go'); void m.getBoundingClientRect(); m.classList.add('go'); }));
+        pages.forEach(p => {
+            p.querySelectorAll('.metric-value, .score-number, .com-hero b').forEach((el, i) => countUp(el, Math.min(i, 8) * 70 + 250));
+            p.querySelectorAll('.bar-fill, .pd-fill, .mini-bar').forEach(el => { el.classList.add('grow'); setTimeout(() => el.classList.remove('grow'), 1600); });
+        });
+    }
+    function showPage(g, button) {
+        if (navBusy) { navNext = [g, button]; return; }
+        const ids = GRUPOS[g] || [g], cur = [...document.querySelectorAll('.page.active')];
+        if (cur.length === ids.length && ids.every(id => document.getElementById(id).classList.contains('active'))) return;
+        const swap = () => {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'stacked'));
+            ids.forEach((id, i) => { const el = document.getElementById(id); el.classList.add('active'); el.classList.toggle('stacked', i > 0); el.style.order = i; });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (ids.includes('productos')) prRender();
+            if (ids.includes('growth')) grRender();
+            if (ids.includes('digital')) dgRender();
+            if (ids.includes('sustentabilidad')) suRender();
+            animarPagina();
+        };
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (button) { button.classList.add('active'); moveNavInd(button); }
+        if (NAV_RM() || !cur.length) { swap(); return; }
+        navBusy = true; cur.forEach(p => p.classList.add('leaving'));
+        setTimeout(() => {
+            cur.forEach(p => p.classList.remove('leaving')); swap(); navBusy = false;
+            if (navNext) { const nx = navNext; navNext = null; showPage(nx[0], nx[1]); }
+        }, 190);
+    }
+
+    /* ------------------------------------------------------------------
+       MODAL DE ANÁLISIS
+    ------------------------------------------------------------------- */
+
+    function openModal(title, text) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalBody').textContent = text;
+        document.getElementById('modal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('open');
+    }
+
+    document.getElementById('modal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+
+    /* ------------------------------------------------------------------
+       MODAL DE IMPORTACIÓN
+    ------------------------------------------------------------------- */
+
+    function openImportModal() {
+        document.getElementById('importMsg').textContent = '';
+        document.getElementById('importModal').classList.add('open');
+    }
+
+    function closeImportModal() {
+        document.getElementById('importModal').classList.remove('open');
+    }
+
+    document.getElementById('importModal').addEventListener('click', function (e) {
+        if (e.target === this) closeImportModal();
+    });
+
+    function switchImportTab(tab) {
+        const isFile = tab === 'file';
+        document.getElementById('tabFile').classList.toggle('active', isFile);
+        document.getElementById('tabPaste').classList.toggle('active', !isFile);
+        document.getElementById('importFilePanel').style.display = isFile ? 'block' : 'none';
+        document.getElementById('importPastePanel').style.display = isFile ? 'none' : 'block';
+    }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => aplicarArchivoPrisma(e.target.result);
+        reader.onerror = () => mostrarMensajeImport('No se pudo leer el archivo.', false);
+        reader.readAsText(file);
+    }
+
+    function handlePasteImport() {
+        const raw = document.getElementById('jsonPasteArea').value;
+        aplicarArchivoPrisma(raw);
+    }
+
+    /* ------------------------------------------------------------------
+       LECTOR DEL ARCHIVO PRISMA REAL (formato "Archivo PRISMA", v1.1)
+       Estructura esperada (la que exporta PRISMA Diagnóstico):
+         { formato, version, empresa:{nombre,giro,ubicacion,antiguedad,
+           empleados,producto_principal,objetivo_actual},
+           areas:{ "Finanzas":[...indicadores], "Marketing y ventas":[...], ... },
+           analisis:{ cifras:{ventas_mensuales,costos_variables,gastos_fijos,
+                     utilidad_declarada,...}, hallazgos:[{codigo,area,nivel,
+                     titulo_simple,titulo_tecnico,lectura_simple,lectura_tecnica}] } }
+       Cada indicador de "areas" trae "estado" ("Insuficiente" u otro); el
+       puntaje por área se calcula igual que en Diagnóstico: % de
+       indicadores con estado distinto de "Insuficiente".
+    ------------------------------------------------------------------- */
+
+    function aplicarArchivoPrisma(rawText) {
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (err) {
+            mostrarMensajeImport('El texto no se pudo leer. Revisa que sea el archivo correcto.', false);
+            return;
+        }
+
+        if (data.formato !== 'Archivo PRISMA') {
+            mostrarMensajeImport('Ojo: este archivo no parece un Archivo PRISMA. Intentaremos leerlo de todos modos.', false);
+        }
+
+        const empresaObj = data.empresa || {};
+        const cifras = (data.analisis && data.analisis.cifras) || {};
+        const hallazgosReales = (data.analisis && data.analisis.hallazgos) || [];
+        const areasReales = data.areas || {};
+
+        // Puntaje por área: % de indicadores con información suficiente.
+        const areasCalculadas = {};
+        Object.keys(AREA_KEY_DESDE_NOMBRE_REAL).forEach(nombreReal => {
+            const key = AREA_KEY_DESDE_NOMBRE_REAL[nombreReal];
+            const indicadores = areasReales[nombreReal];
+            if (Array.isArray(indicadores) && indicadores.length) {
+                const suficientes = indicadores.filter(i => i.estado !== 'Insuficiente').length;
+                areasCalculadas[key] = Math.round((suficientes / indicadores.length) * 100);
+            } else {
+                areasCalculadas[key] = state.areas[key];
+            }
+        });
+
+        const areasConDatos = Object.values(areasCalculadas).filter(v => Number.isFinite(v));
+        const scoreGeneral = areasConDatos.length
+            ? Math.round(areasConDatos.reduce((a, b) => a + b, 0) / areasConDatos.length)
+            : state.score;
+
+        const ventas = numeroOr(cifras.ventas_mensuales, state.ventas);
+        const variables = numeroOr(cifras.costos_variables, state.variables);
+        const fijos = numeroOr(cifras.gastos_fijos, state.fijos);
+        const deuda = numeroOr(cifras.deuda_total, state.deuda);
+        const liquidez = numeroOr(cifras.liquidez_disponible, state.liquidez);
+
+        const metasReales = (data.objetivos && data.objetivos.metas) || (data.analisis && data.analisis.metas) || {};
+
+        const hallazgosMapeados = hallazgosReales.length
+            ? hallazgosReales.map(h => ({
+                titulo: h.titulo_simple || h.titulo_tecnico || h.nombre_simple || 'Dato',
+                nivel: NIVEL_A_LAB[h.nivel] || 'media',
+                descripcion: h.lectura_simple || h.lectura_tecnica || '',
+                tags: [h.area || 'Dinero']
+            }))
+            : state.hallazgosBase;
+
+        state = {
+            empresa: empresaObj.nombre || state.empresa,
+            score: scoreGeneral,
+            scoreNota: "El puntaje es el promedio de qué tan completa está la información de cada área.",
+            ventas: ventas,
+            variables: variables,
+            fijos: fijos,
+            deuda: deuda,
+            liquidez: liquidez,
+            metas: {
+                utilidadMinPct: numeroOr(metasReales.utilidad_min_pct, state.metas.utilidadMinPct),
+                variablesMaxPct: numeroOr(metasReales.costos_variables_max_pct, state.metas.variablesMaxPct),
+                fijosMaxPct: numeroOr(metasReales.gastos_fijos_max_pct, state.metas.fijosMaxPct),
+                deudaMaxPct: numeroOr(metasReales.deuda_max_pct, state.metas.deudaMaxPct)
+            },
+            areas: Object.assign({}, state.areas, areasCalculadas),
+            contexto: {
+                antiguedad: empresaObj.antiguedad || state.contexto.antiguedad,
+                sector: empresaObj.giro || state.contexto.sector,
+                personal: empresaObj.empleados || state.contexto.personal,
+                producto: empresaObj.producto_principal || state.contexto.producto,
+                objetivo: empresaObj.objetivo_actual || state.contexto.objetivo
+            },
+            hallazgosBase: hallazgosMapeados
+        };
+
+        state.comercial = (data.analisis && data.analisis.comercial) || null;
+        const repLab = aplicarSeccionesLab(data);
+        state.com = extraerComercial(areasReales);
+        prefillComercial();
+        sincronizarInputsSimulador();
+        renderState();
+        mostrarMensajeImport('Listo, el archivo se cargó bien.' + (repLab.length ? ' También se cargó: ' + repLab.join(', ') + '.' : ''), true);
+        document.getElementById('statusText').textContent = 'Datos cargados';
+        setTimeout(closeImportModal, 900);
+    }
+
+    function sincronizarInputsSimulador() {
+        document.getElementById('ventas').value = state.ventas;
+        document.getElementById('variables').value = state.variables;
+        document.getElementById('fijos').value = state.fijos;
+        document.getElementById('deuda').value = state.deuda;
+        document.getElementById('liquidez').value = state.liquidez;
+    }
+
+    function restaurarDemo() {
+        state = JSON.parse(JSON.stringify(DEMO_STATE));
+        sincronizarInputsSimulador();
+        renderState();
+        document.getElementById('statusText').textContent = 'Datos de ejemplo';
+        mostrarMensajeImport('Volvieron los datos de ejemplo.', true);
+    }
+
+    function mostrarMensajeImport(msg, ok) {
+        const el = document.getElementById('importMsg');
+        el.textContent = msg;
+        el.className = 'import-msg ' + (ok ? 'ok' : 'err');
+    }
+
+    function numeroOr(valor, fallback) {
+        const n = Number(valor);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    /* ------------------------------------------------------------------
+       RENDER DEL ESTADO (reemplaza los valores fijos en el HTML)
+    ------------------------------------------------------------------- */
+
+    function renderState() {
+        setTimeout(renderComercial, 0);
+        document.getElementById('nombreEmpresa').textContent = state.empresa;
+
+        aplicarScore(state.score);
+        document.getElementById('scoreNota').textContent = state.scoreNota;
+
+        const costosTotales = state.variables + state.fijos;
+        const utilidad = state.ventas - costosTotales;
+        document.getElementById('resVentas').textContent = formatoCorto(state.ventas);
+        document.getElementById('resUtilidad').textContent = formatoCorto(utilidad);
+        document.getElementById('finVentas').textContent = formatoMoneda(state.ventas);
+        document.getElementById('finCostos').textContent = formatoMoneda(costosTotales);
+        document.getElementById('finUtilidad').textContent = formatoMoneda(utilidad);
+
+        const margen = state.ventas > 0 ? (utilidad / state.ventas) * 100 : 0;
+        const costosVentas = state.ventas > 0 ? (costosTotales / state.ventas) * 100 : 0;
+        document.getElementById('finMargen').textContent = margen.toFixed(1) + '%';
+        document.getElementById('finCostosVentas').textContent = costosVentas.toFixed(1) + '%';
+
+        document.getElementById('deuda').value = state.deuda;
+        document.getElementById('liquidez').value = state.liquidez;
+        renderAnalisisFinanciero();
+
+        document.getElementById('ctxAntiguedad').textContent = state.contexto.antiguedad;
+        document.getElementById('ctxSector').textContent = state.contexto.sector;
+        document.getElementById('ctxPersonal').textContent = state.contexto.personal + (String(state.contexto.personal).match(/trabajador/) ? '' : ' trabajadores');
+        document.getElementById('ctxProducto').textContent = state.contexto.producto;
+        document.getElementById('ctxObjetivo').textContent = state.contexto.objetivo;
+        const opP = document.getElementById('opPersonal'); if (opP) opP.textContent = state.contexto.personal;
+
+        renderAreas();
+        renderHallazgos();
+
+        simular();
+    }
+
+    function aplicarScore(score) {
+        const s = Math.max(0, Math.min(100, Number(score) || 0));
+        document.getElementById('scoreNumber').textContent = Math.round(s);
+        const deg = (s / 100) * 360;
+        document.getElementById('scoreRing').style.background =
+            `conic-gradient(var(--blue) 0deg ${deg}deg, var(--track) ${deg}deg 360deg)`;
+    }
+
+    function renderAreas() {
+        const cont = document.getElementById('areasContainer');
+        cont.innerHTML = '';
+        Object.keys(state.areas).forEach(key => {
+            const val = Math.max(0, Math.min(100, Number(state.areas[key]) || 0));
+            const label = AREA_LABELS[key] || key;
+            cont.innerHTML += `
+                <div class="area">
+                    <div class="area-head"><span>${label}</span><strong>${Math.round(val)}</strong></div>
+                    <div class="bar"><div class="bar-fill" style="width:${val}%"></div></div>
+                </div>`;
+        });
+    }
+
+    function renderHallazgos() {
+        const badgeClass = { alta: 'high', media: 'medium', baja: 'low' };
+        const hallazgos = state.hallazgosBase;
+
+        document.getElementById('resHallazgosCount').textContent = hallazgos.length;
+
+        const previewCont = document.getElementById('findingsPreview');
+        previewCont.innerHTML = hallazgos.slice(0, 3).map(h => `
+            <div class="finding">
+                <div class="finding-title">${h.titulo}<span class="badge ${badgeClass[h.nivel] || 'medium'}">${(NIVEL_TXT[h.nivel] || h.nivel)}</span></div>
+                <p>${h.descripcion}</p>
+            </div>`).join('');
+
+        const fullCont = document.getElementById('hallazgosContainer');
+        fullCont.innerHTML = hallazgos.map((h, i) => `
+            <div class="card">
+                <div class="rec-number">DATO ${String(i + 1).padStart(2, '0')}</div>
+                <h3>${h.titulo}<span class="badge ${badgeClass[h.nivel] || 'medium'}">${(NIVEL_TXT[h.nivel] || h.nivel)}</span></h3>
+                <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-top:10px;">${h.descripcion}</p>
+                <div class="rec-meta">${(h.tags || []).map(t => `<span class="meta">${t}</span>`).join('')}</div>
+            </div>`).join('');
+    }
+
+    function capitaliza(s) {
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+    }
+
+    function formatoMoneda(n) {
+        return '$' + Math.round(n).toLocaleString('es-MX');
+    }
+
+    function formatoCorto(n) {
+        if (Math.abs(n) >= 1000) return '$' + Math.round(n / 1000) + 'k';
+        return '$' + Math.round(n);
+    }
+
+    /* ------------------------------------------------------------------
+       ANÁLISIS FINANCIERO PROPIO DE PRISMA LAB
+       A diferencia de los hallazgos importados de Diagnóstico, esto lo
+       calcula LAB mismo a partir de ventas/variables/fijos/deuda/liquidez
+       -- ya sean los importados o los que el usuario edite aquí -- por lo
+       que reacciona en tiempo real a cualquier cambio.
+    ------------------------------------------------------------------- */
+
+    // Cuánto debes vender para no perder: ventas mínimas para no perder, y qué tan lejos
+    // están las ventas actuales de ese mínimo (misma lógica que usa
+    // PRISMA Diagnóstico).
+    function calcularPuntoEquilibrio(ventas, variables, fijos) {
+        if (ventas <= 0) return null;
+        const margenContribucion = 1 - (variables / ventas);
+        if (margenContribucion <= 0) {
+            return { equilibrio: null, holgura: null, nivel: 'alta',
+                texto: 'Lo que gastas en producir es igual o mayor a lo que vendes: no queda nada para pagar los gastos fijos.' };
+        }
+        const equilibrio = fijos / margenContribucion;
+        const holgura = ((ventas - equilibrio) / ventas) * 100;
+        const nivel = holgura >= 15 ? 'baja' : (holgura >= 0 ? 'media' : 'alta');
+        const texto = holgura >= 0
+            ? `Vendes ${holgura.toFixed(1)}% más de lo mínimo para no perder.`
+            : `Vendes ${Math.abs(holgura).toFixed(1)}% menos de lo mínimo para no perder: hoy se está perdiendo dinero.`;
+        return { equilibrio, holgura, nivel, texto };
+    }
+
+    // Endeudamiento: deuda total como % de las ventas mensuales, contra la meta.
+    function calcularEndeudamiento(deuda, ventas, metaMaxPct) {
+        if (ventas <= 0) return null;
+        const ratio = (deuda / ventas) * 100;
+        const manejable = ratio <= metaMaxPct;
+        return {
+            ratio, manejable, nivel: manejable ? 'baja' : 'media',
+            texto: manejable
+                ? `Lo que se debe equivale a ${ratio.toFixed(1)}% de lo que se vende en un mes. Está dentro de lo esperado (máximo ${metaMaxPct}%).`
+                : `Lo que se debe equivale a ${ratio.toFixed(1)}% de lo que se vende en un mes. Es más de lo esperado (máximo ${metaMaxPct}%). Conviene revisar cuándo y cómo se paga.`
+        };
+    }
+
+    // Liquidez: meses de costos y gastos que cubre el efectivo disponible.
+    function calcularLiquidez(liquidez, variables, fijos) {
+        const gastoMensual = variables + fijos;
+        if (gastoMensual <= 0) return null;
+        const meses = liquidez / gastoMensual;
+        const nivel = meses >= 3 ? 'baja' : (meses >= 1 ? 'media' : 'alta');
+        const texto = meses >= 3
+            ? `Con el dinero disponible se pagan ${meses.toFixed(1)} meses de gastos. Es un buen colchón.`
+            : (meses >= 1
+                ? `Con el dinero disponible se pagan ${meses.toFixed(1)} meses de gastos. Lo recomendable son al menos 3.`
+                : `Con el dinero disponible no alcanza ni para un mes de gastos. Hay riesgo de quedarse sin dinero.`);
+        return { meses, nivel, texto };
+    }
+
+    function onEditarDeudaLiquidez() {
+        state.deuda = clamp(Number(document.getElementById('deuda').value), 0, Infinity);
+        state.liquidez = clamp(Number(document.getElementById('liquidez').value), 0, Infinity);
+        renderAnalisisFinanciero();
+    }
+
+    function renderAnalisisFinanciero() {
+        const badgeClass = { alta: 'high', media: 'medium', baja: 'low' };
+        const cont = document.getElementById('analisisFinancieroContainer');
+        if (!cont) return;
+
+        const equilibrio = calcularPuntoEquilibrio(state.ventas, state.variables, state.fijos);
+        const endeudamiento = calcularEndeudamiento(state.deuda, state.ventas, state.metas.deudaMaxPct);
+        const liquidez = calcularLiquidez(state.liquidez, state.variables, state.fijos);
+
+        const filas = [];
+
+        if (equilibrio) {
+            filas.push({
+                titulo: 'Cuánto debes vender para no perder',
+                valor: equilibrio.equilibrio !== null ? formatoMoneda(equilibrio.equilibrio) + ' / mes' : 'No te queda margen',
+                nivel: equilibrio.nivel,
+                texto: equilibrio.texto
+            });
+        }
+        if (endeudamiento) {
+            filas.push({
+                titulo: 'Lo que se debe',
+                valor: endeudamiento.ratio.toFixed(1) + '% de lo que se vende al mes',
+                nivel: endeudamiento.nivel,
+                texto: endeudamiento.texto
+            });
+        }
+        if (liquidez) {
+            filas.push({
+                titulo: 'Dinero disponible',
+                valor: liquidez.meses.toFixed(1) + ' meses de gastos pagados',
+                nivel: liquidez.nivel,
+                texto: liquidez.texto
+            });
+        }
+
+        cont.innerHTML = filas.map(f => `
+            <div class="finding">
+                <div class="finding-title">${f.titulo} — ${f.valor}<span class="badge ${badgeClass[f.nivel] || 'medium'}">${(NIVEL_TXT[f.nivel] || f.nivel)}</span></div>
+                <p>${f.texto}</p>
+            </div>`).join('');
+    }
+
+    /* ------------------------------------------------------------------
+       SIMULADOR
+       - Se ejecuta en tiempo real (oninput) en lugar de un botón.
+       - Valida los campos y muestra avisos en vez de fallar en silencio.
+       - Compara utilidad y margen (%) actuales contra el escenario.
+    ------------------------------------------------------------------- */
+
+    function simular() {
+        const ventasInput = document.getElementById('ventas');
+        const variablesInput = document.getElementById('variables');
+        const fijosInput = document.getElementById('fijos');
+        const varVentasInput = document.getElementById('varVentas');
+        const varVariablesInput = document.getElementById('varVariables');
+        const varFijosInput = document.getElementById('varFijos');
+
+        const ventas = clamp(Number(ventasInput.value), 0, Infinity);
+        const variables = clamp(Number(variablesInput.value), 0, Infinity);
+        const fijos = clamp(Number(fijosInput.value), 0, Infinity);
+        const varVentas = Number(varVentasInput.value) || 0;
+        const varVariables = clamp(Number(varVariablesInput.value) || 0, -100, 100);
+        const varFijos = clamp(Number(varFijosInput.value) || 0, -100, 100);
+
+        const hint = document.getElementById('hintCostos');
+        if (!ventasInput.value || !variablesInput.value || !fijosInput.value ||
+            Number(ventasInput.value) < 0 || Number(variablesInput.value) < 0 || Number(fijosInput.value) < 0) {
+            hint.textContent = 'Escribe números de 0 en adelante.';
+        } else {
+            hint.textContent = '';
+        }
+
+        const costosActuales = variables + fijos;
+        const utilidadActual = ventas - costosActuales;
+
+        const ventasEscenario = ventas * (1 + varVentas / 100);
+        const variablesEscenario = variables * (1 - varVariables / 100);
+        const fijosEscenario = fijos * (1 - varFijos / 100);
+        const utilidadEscenario = ventasEscenario - variablesEscenario - fijosEscenario;
+
+        const cambio = utilidadActual !== 0
+            ? ((utilidadEscenario - utilidadActual) / utilidadActual) * 100
+            : 0;
+
+        document.getElementById('resultado').textContent = formatoMoneda(utilidadEscenario);
+
+        const signo = cambio >= 0 ? '+' : '';
+        const cambioEl = document.getElementById('cambio');
+        cambioEl.textContent = signo + cambio.toFixed(1) + '% comparado con hoy';
+        cambioEl.classList.toggle('negativo', cambio < 0);
+
+        const margenActual = ventas > 0 ? (utilidadActual / ventas) * 100 : 0;
+        const margenEscenario = ventasEscenario > 0 ? (utilidadEscenario / ventasEscenario) * 100 : 0;
+
+        actualizarMiniChart(utilidadActual, utilidadEscenario, margenActual, margenEscenario);
+
+        // Cuánto debes vender para no perder: actual vs. escenario, para ver si el
+        // escenario acerca o aleja a la empresa de perder dinero.
+        const eqActual = calcularPuntoEquilibrio(ventas, variables, fijos);
+        const eqEscenario = calcularPuntoEquilibrio(ventasEscenario, variablesEscenario, fijosEscenario);
+        renderEquilibrioSimulacion(eqActual, eqEscenario);
+
+        // Deuda y liquidez no varían con este escenario, pero se
+        // mantienen sincronizadas si el usuario las edita en Finanzas.
+        state.ventas = ventas;
+        state.variables = variables;
+        state.fijos = fijos;
+    }
+
+    function renderEquilibrioSimulacion(actual, escenario) {
+        const el = document.getElementById('equilibrioSimulacion');
+        if (!el) return;
+        if (!actual || !escenario) {
+            el.innerHTML = '<small>No queda margen para calcular cuánto hay que vender para no perder.</small>';
+            return;
+        }
+        const flechaClase = escenario.holgura >= actual.holgura ? '' : 'negativo';
+        el.innerHTML = `
+            <small>PUNTO DE EQUILIBRIO — HOLGURA SOBRE VENTAS</small>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;">
+                <span>Actual: <strong>${actual.holgura !== null ? actual.holgura.toFixed(1) + '%' : '—'}</strong></span>
+                <span class="result-change ${flechaClase}">→ Escenario: ${escenario.holgura !== null ? escenario.holgura.toFixed(1) + '%' : '—'}</span>
+            </div>`;
+    }
+
+    function clamp(n, min, max) {
+        if (!Number.isFinite(n)) return min;
+        return Math.max(min, Math.min(max, n));
+    }
+
+    function actualizarMiniChart(utilActual, utilEsc, margenActual, margenEsc) {
+        const maxUtil = Math.max(Math.abs(utilActual), Math.abs(utilEsc), 1);
+        document.getElementById('barUtilidadActual').style.height = pctBarra(utilActual, maxUtil);
+        document.getElementById('barUtilidadEscenario').style.height = pctBarra(utilEsc, maxUtil);
+
+        const maxMargen = Math.max(Math.abs(margenActual), Math.abs(margenEsc), 1);
+        document.getElementById('barMargenActual').style.height = pctBarra(margenActual, maxMargen);
+        document.getElementById('barMargenEscenario').style.height = pctBarra(margenEsc, maxMargen);
+    }
+
+    function pctBarra(valor, maxAbs) {
+        const pct = (Math.abs(valor) / maxAbs) * 100;
+        return clamp(pct, 2, 100) + '%';
+    }
+
+    /* ------------------------------------------------------------------
+       TECLADO: Escape cierra cualquier modal abierto
+    ------------------------------------------------------------------- */
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeImportModal();
+        }
+    });
+
+    /* ------------------------------------------------------------------
+       INICIALIZACIÓN
+    ------------------------------------------------------------------- */
+
+
+    /* ------------------------------------------------------------------
+       COMERCIAL Y EXPANSIÓN (Archivo PRISMA 1.2)
+    ------------------------------------------------------------------- */
+
+    function extraerComercial(areas) {
+        const todos = [].concat(...Object.values(areas || {}).filter(Array.isArray));
+        const v = nombre => { const i = todos.find(x => x.indicador === nombre); return i && Number.isFinite(i.valor) ? i.valor : null; };
+        return {
+            clientes: v('Clientes activos'), ticket: v('Ticket promedio'), rec: v('Tasa de recurrencia'), pub: v('Inversión publicitaria'),
+            nuevos: v('Clientes nuevos al mes'), canal: v('Ventas del canal principal'), inter: v('Dependencia de intermediarios'),
+            dist: v('Costo de distribución'), linea: v('Ventas en línea'), cobertura: v('Cobertura geográfica'),
+            productos: v('Productos activos'), top1: v('Ventas del producto principal'), top3: v('Ventas de los 3 principales'),
+            margen: v('Margen del producto principal'), baja: v('Productos de baja rotación'), ocio: v('Capacidad ociosa'),
+            inv: v('Inversión disponible para crecer'), inventario: v('Inventario')
+        };
+    }
+
+    function prefillComercial() {
+        const c = state.com || {}, set = (id, val) => { if (val !== null && val !== undefined && Number.isFinite(val)) document.getElementById(id).value = val; };
+        set('cDist', c.dist !== null ? Math.round(c.dist * 0.2 * 10) / 10 : null);   // 20% menos de lo que gasta hoy
+        set('cMerInv', c.inv > 0 ? c.inv : null);
+        set('pMargen', c.margen);
+        set('cCanalPct', c.canal !== null && c.canal >= 70 ? 15 : null);
+    }
+
+    const fm = n => formatoMoneda(Math.round(n));
+    const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const txtP = t => `<p style="color:var(--muted);font-size:13px;line-height:1.7;margin-top:8px;">${t}</p>`;
+
+    function chStack(titulo, partes) {
+        const tot = partes.reduce((a, p) => a + p.v, 0) || 1;
+        return `<div style="margin:14px 0;"><div style="font-size:12px;margin-bottom:5px;">${esc(titulo)}</div>
+            <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;">${partes.map(p => `<div title="${esc(p.l)}: ${p.v.toFixed(0)}%" style="width:${p.v / tot * 100}%;background:${p.c};"></div>`).join('')}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:5px;">${partes.map(p => `<span style="display:inline-block;width:9px;height:9px;background:${p.c};margin:0 4px 0 8px;"></span>${esc(p.l)} ${p.v.toFixed(0)}%`).join('')}</div></div>`;
+    }
+
+    function chBars(titulo, filas) {
+        const max = Math.max(1, ...filas.map(f => Math.abs(f.v)));
+        return `<div style="margin:14px 0;"><div style="font-size:12px;margin-bottom:6px;">${esc(titulo)}</div>` + filas.map(f =>
+            `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px;"><div style="width:150px;color:var(--muted);">${esc(f.l)}</div>
+            <div style="flex:1;"><div style="height:12px;border-radius:4px;width:${Math.max(1, Math.abs(f.v) / max * 100)}%;background:${f.v >= 0 ? '#16a34a' : '#dc2626'};"></div></div>
+            <div style="width:90px;text-align:right;">${f.v >= 0 ? '+' : ''}${fm(f.v)}</div></div>`).join('') + '</div>';
+    }
+
+    function chHist(titulo, sims, base) {
+        const min = sims[0], max = sims[sims.length - 1], k = 20, w = (max - min) / k || 1, bins = new Array(k).fill(0);
+        sims.forEach(x => bins[Math.min(k - 1, Math.floor((x - min) / w))]++);
+        const m = Math.max(...bins);
+        return `<div style="margin:14px 0;"><div style="font-size:12px;margin-bottom:6px;">${esc(titulo)}</div>
+            <div style="display:flex;align-items:flex-end;gap:2px;height:100px;">${bins.map((n, i) => `<div title="${fm(min + i * w)}" style="flex:1;height:${n / m * 100}%;background:${min + (i + 0.5) * w >= base ? '#16a34a' : '#dc2626'};border-radius:2px 2px 0 0;"></div>`).join('')}</div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;"><span>${fm(min)}</span><span>Rojo: menos que la ganancia de hoy (${fm(base)})</span><span>${fm(max)}</span></div></div>`;
+    }
+
+    function renderComercial() {
+        const el = document.getElementById('comercialInfo');
+        if (!el) return;
+        const c = state.comercial, k = state.com;
+        let h = '';
+        if (!c) {
+            h = '<div class="card"><p style="color:var(--muted);font-size:13px;">Carga el Archivo PRISMA del Diagnóstico 1.2 para ver cómo vende la empresa y qué puede hacer para crecer. Lo de abajo funciona con las ventas y gastos que ya cargaste.</p></div>';
+        } else {
+            h = '<div class="grid grid-3">' + (c.metricas || []).map(m => `<div class="card"><div class="metric-label">${esc(m.nombre)}</div><div class="metric-value" style="font-size:22px;">${fm(m.valor)}</div>${txtP(esc(m.lectura))}</div>`).join('') + '</div>';
+        }
+        if (k) {
+            let g = '';
+            if (k.canal !== null) g += chStack('De dónde vienen las ventas', [{ l: 'Lugar principal', v: k.canal, c: '#2563eb' }, { l: 'Otros lugares', v: Math.max(0, 100 - k.canal), c: '#93c5fd' }]);
+            if (k.inter !== null || k.linea !== null) g += chStack('Cómo llegan las ventas', [{ l: 'Por intermediarios', v: k.inter || 0, c: '#f59e0b' }, { l: 'Por internet', v: k.linea || 0, c: '#8b5cf6' }, { l: 'Otras formas', v: Math.max(0, 100 - (k.inter || 0) - (k.linea || 0)), c: '#d1d5db' }]);
+            if (k.top1 !== null && k.top3 !== null) g += chStack('Cuánto depende de pocos productos', [{ l: 'El que más vende', v: k.top1, c: '#dc2626' }, { l: 'Los siguientes 2', v: Math.max(0, k.top3 - k.top1), c: '#fb923c' }, { l: 'Resto', v: Math.max(0, 100 - k.top3), c: '#d1d5db' }]);
+            if (k.ocio !== null) g += chStack('Cuánto se usa de lo que se puede producir', [{ l: 'Se usa', v: 100 - k.ocio, c: '#16a34a' }, { l: 'Sobra', v: k.ocio, c: '#fde68a' }]);
+            if (g) h += `<details class="pd-acc" style="margin-top:20px;"><summary>Cómo vende hoy la empresa<small>De dónde vienen las ventas y de qué producto dependen</small></summary>${g}</details>`;
+        }
+        if (c) {
+            h += `<div class="card" style="margin-top:20px;"><h3>Qué hacer</h3>${(c.estrategias || []).map((e, i) => `<details class="pd-acc" ${i === 0 ? 'open' : ''}><summary>${esc(e.titulo)}<small>Número ${e.prioridad} (el 1 es lo primero)</small></summary>${txtP(esc(e.motivo))}${txtP('Pasos: ' + (e.acciones || []).map(esc).join('; ') + '.')}${txtP('Qué usar: ' + (e.herramientas || []).map(esc).join(', ') + '.')}</details>`).join('') || txtP('Sin estrategias.')}</div>` +
+                `<details class="pd-acc" style="margin-top:20px;"><summary>Lo que encontramos en ventas</summary>${(c.hallazgos || []).map(x => txtP(`<strong>${esc(x.titulo)}.</strong> ${esc(x.texto)}`)).join('') || txtP('Sin hallazgos.')}</details>` +
+                `<details class="pd-acc" style="margin-top:20px;"><summary>Otras formas de crecer</summary>${(c.expansion || []).map(e => txtP(`<strong>${esc(e.ruta)}:</strong> ${esc(e.razon)}`)).join('')}</details>`;
+        }
+        el.innerHTML = h;
+        simularComercial();
+    }
+
+    function simularComercial() {
+        const out = document.getElementById('comercialSim');
+        if (!out) return;
+        const n = id => Number(document.getElementById(id).value) || 0;
+        const V = state.ventas, base = V - state.variables - state.fijos;
+        const cm = V > 0 ? 1 - state.variables / V : 0.4;
+        const com = state.com || {};
+        const dRet = n('cRet'), canPct = n('cCanalPct'), canCosto = n('cCanalCosto'), dDist = n('cDist'), merPct = n('cMerPct'), merInv = n('cMerInv');
+        const prodPct = n('cProdPct'), pm = n('pMargen'), caida = n('pCaida'), liq = n('pLiq');
+        const extRet = (com.clientes > 0 && com.ticket > 0) ? com.clientes * dRet / 100 * com.ticket : V * dRet / 100;
+        const extCan = V * canPct / 100, extMer = V * merPct / 100, extProd = V * prodPct / 100, ahorro = V * dDist / 100;
+        const cap = com.ocio !== null && com.ocio !== undefined ? V * com.ocio / Math.max(1, 100 - com.ocio) : Infinity;
+        const calc = f => {
+            const tot = (extRet + extCan + extMer + extProd) * f, s = tot > cap && tot > 0 ? cap / tot : 1;
+            return { s, ret: extRet * f * s * cm, can: extCan * f * s * cm - canCosto, mer: extMer * f * s * cm, prod: extProd * f * s * pm / 100, ent: ahorro };
+        };
+        const r = f => { const c = calc(f); return base + c.ret + c.can + c.mer + c.prod + c.ent; };
+        const e = calc(1), esperada = r(1);
+        const sims = [];
+        for (let i = 0; i < 2000; i++) sims.push(r(0.5 + 0.8 * (Math.random() + Math.random()) / 2));
+        sims.sort((a, b) => a - b);
+        const q = p => sims[Math.floor(p * (sims.length - 1))];
+        const prob = Math.round(sims.filter(x => x > base).length / sims.length * 100);
+        const mejora = esperada - base;
+        const payback = merInv > 0 && mejora > 0 ? (merInv / mejora).toFixed(1) + ' meses' : (merInv > 0 ? 'No se recupera' : 'Sin inversión');
+        const fila = (a, b) => `<tr><td style="padding:6px 10px;color:var(--muted);">${a}</td><td style="padding:6px 10px;text-align:right;"><strong>${b}</strong></td></tr>`;
+        let extra = '';
+        if (com.top1 !== null && com.top1 !== undefined) { const perd = V * com.top1 / 100 * caida / 100 * cm; extra += fila(`Ganancia si el producto que más vendes baja ${caida}%`, `${fm(base - perd)} (${perd > 0 ? '-' : ''}${fm(perd)})`); }
+        if (com.inventario > 0) extra += fila(`Dinero que recuperas al rematar ${liq}% del producto parado`, fm(com.inventario * liq / 100));
+        const aviso = e.s < 1 ? `<p style="color:#92400e;font-size:13px;margin-top:10px;"><strong>Ojo: la empresa no alcanza a producir tanto.</strong> Con lo que hoy no usa, solo puede vender ${fm(cap)} más al mes, así que recortamos las ventas nuevas a esa cantidad. Para vender más habría que ampliar la producción.</p>` : (cap !== Infinity ? `<p style="color:var(--muted);font-size:12px;margin-top:10px;">Puede vender hasta ${fm(cap)} más al mes con lo que hoy no usa.</p>` : '');
+        out.innerHTML = `<div class="com-hero"><div><small>Ganancia de cada mes hoy</small><b>${fm(base)}</b></div><div><small>Con los cambios (lo más probable)</small><b>${fm(esperada)}</b></div><div class="mas"><small>Cuánto cambia cada mes</small><b>${(mejora >= 0 ? '+' : '') + fm(mejora)}</b></div></div>
+            ${aviso}
+            ${chBars('Cuánto ayuda cada cambio a la ganancia de cada mes', [{ l: 'Clientes que vuelven', v: e.ret }, { l: 'Nuevo lugar de venta (ya restado su costo)', v: e.can }, { l: 'Otra zona', v: e.mer }, { l: 'Producto nuevo', v: e.prod }, { l: 'Gastar menos en entregas', v: e.ent }])}
+            <details class="pd-acc" ${window.__comMas ? 'open' : ''} ontoggle="window.__comMas = this.open"><summary>Ver más detalle<small>Rango de resultados, qué tan probable es y en cuánto tiempo se recupera lo invertido</small></summary>
+            <table style="width:100%;font-size:14px;border-collapse:collapse;">
+            ${fila('Entre cuánto y cuánto podría quedar (mal caso a buen caso)', fm(q(0.1)) + ' a ' + fm(q(0.9)))}
+            ${fila('Qué tan probable es ganar más que hoy', prob + '%')}
+            ${fila('En cuánto tiempo recuperas lo invertido en la otra zona', payback)}${extra}
+            </table>
+            ${chHist('Qué ganancia podría salir (2,000 casos probados)', sims, base)}
+            ${chBars('Comparación de la ganancia de cada mes', [{ l: 'Hoy', v: base }, { l: 'Mal caso', v: q(0.1) }, { l: 'Lo más probable', v: esperada }, { l: 'Buen caso', v: q(0.9) }])}
+            <p style="color:var(--muted);font-size:12px;margin-top:10px;">Cómo lo calculamos: los clientes que vuelven compran una vez más al mes${com.clientes > 0 && com.ticket > 0 ? '' : ' (si el archivo no trae clientes o compra promedio, se usa un % de las ventas)'}; de cada venta nueva te queda el mismo porcentaje de ganancia que hoy (${(cm * 100).toFixed(0)}%), salvo el producto nuevo, que usa su propia ganancia; el nuevo lugar de venta suma su costo de cada mes.</p></details>`;
+    }
+
+    /* ------------------------------------------------------------------
+       PRISMA PRODUCTION (módulo nuevo, independiente del resto)
+       Datos en localStorage ('prisma_production_v1'). Para conectar un
+       backend más adelante, solo hay que cambiar pdLoad() y pdSave().
+    ------------------------------------------------------------------- */
+    const PD_KEY = 'prisma_production_v1';
+    const PD_DEMO = () => ({ demo: true, empresa: 'Fabricante de cajas de cartón', dias: 22, procesadas: 11000, merma: 7.8, mermaAnt: 4.9, precio: 69,
+        horasPlan: 176, horasParo: 14, velIdeal: 75,
+        costos: { materia: 260000, manoObra: 130000, energia: 25000, mantenimiento: 18000, depreciacion: 22000, otros: 20000 },
+        inv: { stock: 9000, min: 6000, max: 20000, consumo: 500 },
+        procesos: [
+            { id: 1, nombre: 'Materia prima', desc: 'Recibir y revisar el cartón', cap: 1000, trab: 1, maq: 0 },
+            { id: 2, nombre: 'Corte', desc: 'Cortar las hojas a medida', cap: 1000, trab: 3, maq: 1 },
+            { id: 3, nombre: 'Armado', desc: 'Doblar y pegar las cajas', cap: 850, trab: 3, maq: 1 },
+            { id: 4, nombre: 'Empaque', desc: 'Contar, atar y empacar', cap: 600, trab: 3, maq: 0 } ],
+        estados: {}, escenarios: [] });
+    const PD_CAMPOS = [
+        ['Producción', [['dias', 'Días que se trabaja al mes', ''], ['procesadas', 'Unidades que entran a producir al mes', ''], ['merma', 'Merma de ahora (%)', 'pct'], ['mermaAnt', 'Merma del periodo anterior (%)', 'pct'], ['precio', 'Precio de venta por unidad ($)', '']]],
+        ['Tiempo de máquinas (para OEE)', [['horasPlan', 'Horas planeadas al mes', ''], ['horasParo', 'Horas paradas al mes', ''], ['velIdeal', 'Unidades por hora a buen ritmo', '']]],
+        ['Costos del mes', [['costos.materia', 'Materia prima ($)', ''], ['costos.manoObra', 'Mano de obra ($)', ''], ['costos.energia', 'Energía ($)', ''], ['costos.mantenimiento', 'Mantenimiento ($)', ''], ['costos.depreciacion', 'Desgaste de máquinas ($)', ''], ['costos.otros', 'Supervisión, transporte y otros ($)', '']]],
+        ['Inventario de materia prima', [['inv.stock', 'Unidades que hay', ''], ['inv.min', 'Mínimo que conviene tener', ''], ['inv.max', 'Máximo que conviene tener', ''], ['inv.consumo', 'Consumo por día', '']]] ];
+    let PD = pdLoad(), PDtab = 'resumen', PDedit = null, PDS = { trab: 0, capPct: 0, merma: '', precioPct: 0, matPct: 0, salPct: 0, demPct: 0, inv: 0, nombre: '' };
+
+    function pdLoad() { try { const r = localStorage.getItem(PD_KEY); if (r) return JSON.parse(r); } catch (e) {} return PD_DEMO(); }
+    function pdSave() { try { localStorage.setItem(PD_KEY, JSON.stringify(PD)); } catch (e) { pdToast('No se pudo guardar en este navegador.', false); } }
+    function pdToast(m, ok) { const t = document.createElement('div'); t.className = 'pd-toast' + (ok ? '' : ' err'); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.style.opacity = 0, 2200); setTimeout(() => t.remove(), 2600); }
+    const pdGet = (k) => k.split('.').reduce((o, x) => o && o[x], PD);
+    const pdTag = (t) => ({ real: '<span class="pd-tag real">DATO REAL</span>', calc: '<span class="pd-tag calc">CÁLCULO</span>', est: '<span class="pd-tag est">ESTIMACIÓN</span>', sim: '<span class="pd-tag sim">SIMULACIÓN</span>', pend: '<span class="pd-tag est">PENDIENTE</span>' }[t] || '');
+    const pdU = (n) => '$' + Number(n).toFixed(2);
+    const pdN = (n) => Math.round(n).toLocaleString('es-MX');
+    const isN = (v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v));
+
+    /* ---- Modelo: con ch = {} da la situación de hoy; con cambios da la simulación ---- */
+    function pdModelo(P, ch) {
+        ch = ch || {};
+        const ps = P.procesos.filter(p => p.cap > 0), c = P.costos;
+        const need = [P.dias, P.procesadas, P.merma, P.precio, c.materia, c.manoObra, c.energia, c.mantenimiento, c.depreciacion, c.otros];
+        const trabBase = P.procesos.reduce((a, p) => a + (Number(p.trab) || 0), 0);
+        if (!ps.length || need.some(v => !isN(v)) || P.dias <= 0 || P.procesadas <= 0 || trabBase <= 0) return null;
+        const capsBase = ps.map(p => Number(p.cap)), minB = Math.min(...capsBase), iCuello = capsBase.indexOf(minB);
+        const caps = capsBase.map((v, i) => i === iCuello ? v * (1 + (Number(ch.capPct) || 0) / 100) : v);
+        const capSis = Math.min(...caps), capMax = Math.max(...capsBase);
+        const proc = Math.min(P.procesadas * (1 + (Number(ch.demPct) || 0) / 100), capSis * P.dias), ratio = proc / P.procesadas;
+        const merma = isN(ch.merma) ? Number(ch.merma) : Number(P.merma), trab = trabBase + (Number(ch.trab) || 0);
+        const buenas = proc * (1 - merma / 100);
+        const costoMat = c.materia * ratio * (1 + (Number(ch.matPct) || 0) / 100), costoMano = c.manoObra / trabBase * trab * (1 + (Number(ch.salPct) || 0) / 100), costoEn = c.energia * ratio;
+        const fijos = Number(c.mantenimiento) + Number(c.depreciacion) + Number(c.otros), total = costoMat + costoMano + costoEn + fijos;
+        const precio = P.precio * (1 + (Number(ch.precioPct) || 0) / 100), ventas = buenas * precio;
+        return { ps, capsBase, iCuello, cuello: ps[iCuello], capSis, capMax, restr: capMax - minB, proc, buenas, merma, trab, total, costoMat, costoMano, costoEn, fijos,
+            costoUnit: buenas > 0 ? total / buenas : 0, costoProc: total / proc, ventas, utilidad: ventas - total,
+            capMes: capSis * P.dias, util: proc / (capSis * P.dias) * 100, prodTrab: buenas / trab };
+    }
+    function pdOEE(P, m) {
+        if (!m || !isN(P.horasPlan) || !isN(P.horasParo) || !isN(P.velIdeal) || P.horasPlan <= P.horasParo || P.velIdeal <= 0) return null;
+        const d = (P.horasPlan - P.horasParo) / P.horasPlan, r = Math.min(1, P.procesadas / (P.velIdeal * (P.horasPlan - P.horasParo))), q = 1 - P.merma / 100;
+        return { d: d * 100, r: r * 100, q: q * 100, oee: d * r * q * 100 };
+    }
+    function pdFaltantes() {
+        const falta = []; let total = 1;
+        if (!PD.procesos.length) falta.push('Al menos un proceso');
+        PD_CAMPOS.forEach(g => g[1].forEach(f => { total++; if (!isN(pdGet(f[0]))) falta.push(f[1]); }));
+        return { falta, pct: Math.round((total - falta.length) / total * 100) };
+    }
+    function pdInvEstado() {
+        const i = PD.inv; if (!isN(i.stock) || !isN(i.min) || !isN(i.max)) return null;
+        const dias = isN(i.consumo) && i.consumo > 0 ? i.stock / i.consumo : null;
+        if (i.stock < i.min) return { n: 'alta', t: 'Riesgo de que falte material', dias };
+        if (i.stock > i.max) return { n: 'media', t: 'Hay material de sobra', dias };
+        return { n: 'baja', t: 'Inventario sano', dias };
+    }
+
+    /* ---- Prioridades e ideas (todo sale de los datos) ---- */
+    function pdPrioridades(m) {
+        const L = [];
+        if (m && m.restr > 0) { const g = m.restr / m.capMax; L.push({ k: 'cuello', n: g >= .15 ? 'alta' : 'media', cat: 'Cómo se trabaja', t: 'Un paso frena todo: ' + m.cuello.nombre, ev: `Hace ${pdN(m.capSis)} unidades al día; el paso más rápido hace ${pdN(m.capMax)}.`, imp: `Se dejan de hacer hasta ${pdN(m.restr)} unidades al día.`, rec: `Subir la capacidad de ${m.cuello.nombre} (más gente, turno extra o máquina).` }); }
+        if (isN(PD.mermaAnt) && m && PD.merma > PD.mermaAnt) { const imp = (PD.merma - PD.mermaAnt) / 100 * m.proc * m.costoProc; L.push({ k: 'merma', n: PD.merma - PD.mermaAnt >= 2 ? 'alta' : 'media', cat: 'Desperdicio', t: 'El desperdicio subió', ev: `Pasó de ${PD.mermaAnt}% a ${PD.merma}%.`, imp: `Cuesta unos ${fm(imp)} más al mes.`, rec: 'Buscar en qué paso se echa a perder más material.' }); }
+        if (m && m.util >= 90) L.push({ k: 'uso', n: 'media', cat: 'Capacidad', t: 'Casi no queda espacio para producir más', ev: `Se usa ${m.util.toFixed(0)}% de lo que se puede.`, imp: 'Un pedido grande no se podría atender.', rec: 'Planear más capacidad antes de vender más.' });
+        const iv = pdInvEstado(); if (iv && iv.n !== 'baja') L.push({ k: 'inv', n: iv.n, cat: 'Inventario', t: iv.t, ev: `Hay ${pdN(PD.inv.stock)}; conviene entre ${pdN(PD.inv.min)} y ${pdN(PD.inv.max)}.`, imp: iv.n === 'alta' ? 'Puede parar la producción.' : 'Dinero guardado sin usar.', rec: 'Ajustar las compras de material.' });
+        const f = pdFaltantes(); if (f.falta.length) L.push({ k: 'datos', n: 'baja', cat: 'Datos', t: 'Faltan datos para un análisis completo', ev: `Falta: ${f.falta.slice(0, 3).join(', ')}${f.falta.length > 3 ? '…' : ''}.`, imp: 'Algunas cuentas no se pueden hacer.', rec: 'Completar la pestaña Datos.' });
+        return L;
+    }
+    function pdInsights(m) {
+        const L = [];
+        if (!m) return ['Información insuficiente: completa los procesos, la producción y los costos para ver ideas.'];
+        L.push(`${m.cuello.nombre} es el paso más lento: limita todo el sistema a ${pdN(m.capSis)} unidades al día.`);
+        L.push(`Hoy cada caja buena cuesta ${pdU(m.costoUnit)} y se vende en ${pdU(PD.precio)}.`);
+        const matPct = m.costoMat / m.total * 100; L.push(`La materia prima es ${matPct.toFixed(0)}% del costo total; es lo que más pesa.`);
+        if (isN(PD.mermaAnt) && PD.merma !== PD.mermaAnt) { const b = pdModelo(PD, { merma: PD.mermaAnt }); L.push(`Si la merma volviera a ${PD.mermaAnt}%, la ganancia cambiaría ${fm(b.utilidad - m.utilidad)} al mes (simulación).`); }
+        const t = pdModelo(PD, { trab: 1 }); L.push(`Sumar 1 trabajador sin ampliar ${m.cuello.nombre} cambia la ganancia en ${fm(t.utilidad - m.utilidad)} al mes (simulación).`);
+        return L;
+    }
+    function pdResponder(q) {
+        const m = pdModelo(PD, {}), f = pdFaltantes(), ps = pdPrioridades(m);
+        if (!m) return 'No existen suficientes datos para responder con precisión. Falta: ' + f.falta.join(', ') + '.';
+        if (q === 'cuello') return `Tu cuello de botella es ${m.cuello.nombre}: hace ${pdN(m.capSis)} unidades al día.`;
+        if (q === 'dinero') { const partes = [['materia prima', m.costoMat], ['mano de obra', m.costoMano], ['energía', m.costoEn], ['costos fijos', m.fijos]].sort((a, b) => b[1] - a[1]); const merma = m.proc * m.merma / 100 * m.costoProc; return `Lo que más gastas es ${partes[0][0]} (${fm(partes[0][1])} al mes). Lo que se pierde en merma son unos ${fm(merma)} al mes.`; }
+        if (q === 'primero') return ps.length ? `Lo primero: ${ps[0].t}. ${ps[0].rec}` : 'No se detectan problemas con los datos actuales.';
+        if (q === 'escenario') { const b = pdMejorEsc(); return b ? b.texto : 'Todavía no guardas escenarios. Hazlos en la pestaña Simulador.'; }
+        const s = pdModelo(PD, { demPct: 10 }); return `Si pides 10% más: se producirían ${pdN(s.buenas)} cajas buenas (hoy ${pdN(m.buenas)})${s.proc < PD.procesadas * 1.1 ? ', pero ' + m.cuello.nombre + ' no alcanza para el 10% completo' : ''} (simulación).`;
+    }
+
+    /* ---- Dibujo ---- */
+    const pdBar = (l, v, max, bad) => `<div class="pd-row"><div class="lbl">${esc(l)}</div><div class="pd-track"><div class="pd-fill ${bad ? 'bad' : ''}" style="width:${Math.max(1, Math.min(100, v / max * 100))}%"></div></div><div style="width:70px;text-align:right;">${pdN(v)}</div></div>`;
+    const pdKpi = (l, v, tag, sub) => `<div class="card metric-card"><div class="metric-label">${l}${pdTag(tag)}</div><div class="metric-value" style="font-size:24px;">${v}</div><div class="metric-sub">${sub || ''}</div></div>`;
+    const pdBadge = (n) => `<span class="badge ${{ alta: 'high', media: 'medium', baja: 'low' }[n]}">${{ alta: 'Alta', media: 'Media', baja: 'Baja' }[n]}</span>`;
+    const pdFlecha = (a, b, masEsMejor) => { if (Math.abs(a - b) < 1e-9) return '<span>=</span>'; const mejor = (b > a) === masEsMejor; return `<span class="${mejor ? 'pd-up' : 'pd-down'}">${b > a ? '↑' : '↓'}</span>`; };
+
+    function pdTab(t) { PDtab = t; PDedit = null; pdRender(); }
+    function pdRender() {
+        document.getElementById('pdDemoTag').innerHTML = PD.demo ? '<span class="pd-tag demo">DATOS DE DEMOSTRACIÓN</span>' : '';
+        const tabs = [['resumen', 'Resumen'], ['procesos', 'Procesos'], ['datos', 'Datos'], ['simulador', 'Simulador'], ['escenarios', 'Escenarios']];
+        document.getElementById('pdTabs').innerHTML = tabs.map(x => `<button class="pd-tab ${PDtab === x[0] ? 'on' : ''}" onclick="pdTab('${x[0]}')">${x[1]}</button>`).join('');
+        document.getElementById('pdBody').innerHTML = { resumen: pdVistaResumen, procesos: pdVistaProcesos, datos: pdVistaDatos, simulador: pdVistaSim, escenarios: pdVistaEsc }[PDtab]();
+        if (PDtab === 'simulador') pdSimCalc();
+    }
+
+    function pdVistaResumen() {
+        const m = pdModelo(PD, {}), f = pdFaltantes(), o = pdOEE(PD, m);
+        let h = `<div class="card" style="margin-bottom:18px;"><strong>Calidad del análisis: ${f.pct}% de los datos completos</strong>${pdTag('calc')}<div class="pd-track" style="margin:10px 0;"><div class="pd-fill" style="width:${f.pct}%"></div></div>${f.falta.length ? `<p style="font-size:12px;color:var(--muted);">Falta: ${f.falta.map(esc).join(', ')}.</p>` : '<p style="font-size:12px;color:var(--success);">No falta nada.</p>'}</div>`;
+        if (!m) return h + '<div class="card"><h3>Información insuficiente</h3>' + txtP('Con los datos que hay no se puede calcular. Completa la pestaña Procesos y la pestaña Datos.') + '</div>';
+        h += `<div class="grid grid-3">${pdKpi('Cuánto puede hacer el sistema', pdN(m.capSis) + ' / día', 'calc', 'Lo marca ' + esc(m.cuello.nombre))}${pdKpi('Cuánto se usa de la capacidad', m.util.toFixed(0) + '%', 'calc', 'Sobran ' + pdN(m.capMes - m.proc) + ' unidades al mes')}${pdKpi('Costo por caja buena', pdU(m.costoUnit), 'calc', 'Costo total ' + fm(m.total))}${pdKpi('Merma (desperdicio)', PD.merma + '%', 'real', isN(PD.mermaAnt) ? `Antes ${PD.mermaAnt}% (${(PD.merma - PD.mermaAnt >= 0 ? '+' : '') + (PD.merma - PD.mermaAnt).toFixed(1)} puntos)` : '')}${pdKpi('Cajas buenas por trabajador', pdN(m.prodTrab), 'calc', 'al mes')}${pdKpi('Ganancia de producción', fm(m.utilidad), 'calc', 'Ventas ' + fm(m.ventas))}</div>`;
+        h += `<div class="grid grid-2" style="margin-top:18px;"><div class="card"><h3>¿Qué paso frena la producción?</h3><div style="margin-top:12px;">${m.ps.map((p, i) => pdBar(p.nombre, p.cap, m.capMax, i === m.iCuello)).join('')}</div>${txtP(`${esc(m.cuello.nombre)} limita a todo el sistema. Capacidad que se pierde: ${pdN(m.restr)} unidades al día.`)}</div>
+            <div class="card"><h3>¿En qué se va el dinero?</h3>${chStack('Costo total del mes', [{ l: 'Materia prima', v: m.costoMat / m.total * 100, c: '#0b5cad' }, { l: 'Mano de obra', v: m.costoMano / m.total * 100, c: '#12a8c9' }, { l: 'Energía', v: m.costoEn / m.total * 100, c: '#ffcb47' }, { l: 'Fijos', v: m.fijos / m.total * 100, c: '#94a3b8' }])}
+            ${txtP('Merma: ' + fm(m.proc * m.merma / 100 * m.costoProc) + ' al mes en material y trabajo perdido.')}</div></div>`;
+        h += `<div class="card" style="margin-top:18px;"><h3>Eficiencia de las máquinas (OEE)${pdTag('calc')}</h3>${o ? `<div class="grid grid-4" style="margin-top:12px;">${[['Tiempo que trabajan', o.d, 'Horas trabajadas entre horas planeadas'], ['Ritmo', o.r, 'Lo que hacen contra lo que podrían hacer'], ['Calidad', o.q, 'Cajas buenas entre cajas hechas'], ['OEE', o.oee, 'Los tres juntos']].map(x => `<div><div class="metric-label">${x[0]}</div><div class="metric-value" style="font-size:22px;">${x[1].toFixed(1)}%</div><div class="metric-sub">${x[2]}</div></div>`).join('')}</div>` : txtP('Información insuficiente para el OEE. Faltan horas planeadas, horas paradas o unidades por hora (pestaña Datos).')}</div>`;
+        const iv = pdInvEstado(); if (iv) h += `<div class="card" style="margin-top:18px;"><h3>Inventario de materia prima${pdTag('real')}</h3>${txtP(`${pdBadge(iv.n)} ${iv.t}.${iv.dias !== null ? ` Alcanza para ${iv.dias.toFixed(1)} días.` : ''}`)}</div>`;
+        const ps = pdPrioridades(m);
+        h += `<div class="card" style="margin-top:18px;"><h3>Prioridades detectadas</h3>${ps.map(p => `<div class="finding"><div class="finding-title">${esc(p.t)} ${pdBadge(p.n)}<span class="meta" style="margin-left:7px;">${esc(p.cat)}</span></div><p>Qué vimos: ${esc(p.ev)}<br>Impacto: ${esc(p.imp)}<br>Qué hacer: ${esc(p.rec)}</p><select class="pd-in" style="width:auto;margin-top:8px;" onchange="PD.estados['${p.k}']=this.value;pdSave();pdToast('Estado guardado',true)">${['Detectado', 'En análisis', 'En proceso', 'Resuelto'].map(s => `<option ${((PD.estados || {})[p.k] || 'Detectado') === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`).join('') || txtP('No se detectan problemas con los datos actuales.')}</div>`;
+        h += `<div class="card" style="margin-top:18px;"><h3>Ideas que salen de tus datos</h3>${pdInsights(m).map(x => txtP('• ' + esc(x))).join('')}</div>`;
+        h += `<div class="card" style="margin-top:18px;"><h3>Pregunta a PRISMA</h3>${txtP('Respuestas armadas con tus datos (reglas del programa, no una IA conectada).')}<div style="margin-top:10px;">${[['dinero', '¿Dónde pierdo dinero?'], ['cuello', '¿Cuál es mi cuello de botella?'], ['primero', '¿Qué mejoro primero?'], ['mas', '¿Qué pasa si produzco 10% más?'], ['escenario', '¿Qué escenario conviene?']].map(x => `<button class="pd-mini" onclick="document.getElementById('pdResp').textContent=pdResponder('${x[0]}')">${x[1]}</button>`).join('')}</div><div class="analysis-box" id="pdResp">Elige una pregunta.</div></div>`;
+        return h;
+    }
+
+    function pdVistaProcesos() {
+        const m = pdModelo(PD, {}), e = PD.procesos.find(p => p.id === PDedit) || { nombre: '', desc: '', cap: '', trab: '', maq: '' };
+        const nodos = PD.procesos.map((p, i) => `<div class="pd-node ${m && m.cuello && m.cuello.id === p.id ? 'cuello' : ''}"><h4>${esc(p.nombre)}${m && m.cuello && m.cuello.id === p.id ? ' <span class="badge high">Cuello</span>' : ''}</h4><p>${esc(p.desc || '')}</p><p><strong>${pdN(p.cap || 0)}</strong> unid./día · ${p.trab || 0} trab. · ${p.maq || 0} máq.</p>
+            <button class="pd-mini" onclick="pdMover(${i},-1)" title="Subir">←</button><button class="pd-mini" onclick="pdMover(${i},1)" title="Bajar">→</button><button class="pd-mini" onclick="PDedit=${p.id};pdRender()">Editar</button><button class="pd-mini del" onclick="pdBorrar(${p.id})">Quitar</button></div>${i < PD.procesos.length - 1 ? '<div class="pd-arrow">→</div>' : ''}`).join('');
+        return `<div class="card"><h3>Mapa del proceso${pdTag('real')}</h3>${txtP('Cada caja es un paso. Van en orden de izquierda a derecha; usa las flechas para cambiar el orden.')}<div class="pd-flow">${nodos || txtP('Todavía no hay pasos. Agrega el primero abajo.')}</div>
+            ${m ? `<div class="analysis-box"><strong>Cuello de botella: ${esc(m.cuello.nombre)}</strong>${pdTag('calc')}<br>Hace ${pdN(m.capSis)} unid./día. El sistema podría llegar a ${pdN(m.capMax)}. Se pierden ${pdN(m.restr)} al día.<br>El paso de ${esc(m.cuello.nombre)} limita hoy la capacidad de todo el sistema productivo.</div>` : ''}</div>
+            <div class="card" style="margin-top:18px;"><h3>${PDedit ? 'Editar paso' : 'Agregar paso'}</h3><div class="pd-form" style="margin-top:12px;">
+            <label>Nombre<input id="pdpN" value="${esc(e.nombre)}"></label><label>Qué se hace<input id="pdpD" value="${esc(e.desc)}"></label><label>Unidades por día<input id="pdpC" type="number" min="0" value="${esc(e.cap)}"></label><label>Trabajadores<input id="pdpT" type="number" min="0" value="${esc(e.trab)}"></label><label>Máquinas<input id="pdpM" type="number" min="0" value="${esc(e.maq)}"></label></div>
+            <button class="button" onclick="pdGuardarProceso()">${PDedit ? 'Guardar cambios' : 'Agregar paso'}</button>${PDedit ? '<button class="button secondary" style="margin-left:8px;" onclick="PDedit=null;pdRender()">Cancelar</button>' : ''}</div>`;
+    }
+    function pdGuardarProceso() {
+        const v = id => document.getElementById(id).value.trim(), nombre = v('pdpN'), cap = Number(v('pdpC')), trab = Number(v('pdpT') || 0), maq = Number(v('pdpM') || 0);
+        if (!nombre) return pdToast('Escribe el nombre del paso.', false);
+        if (!(cap > 0)) return pdToast('Las unidades por día deben ser mayores que 0.', false);
+        if (trab < 0 || maq < 0) return pdToast('No se aceptan números negativos.', false);
+        if (PD.procesos.some(p => p.nombre.toLowerCase() === nombre.toLowerCase() && p.id !== PDedit)) return pdToast('Ya existe un paso con ese nombre.', false);
+        const d = { nombre, desc: v('pdpD'), cap, trab, maq };
+        if (PDedit) Object.assign(PD.procesos.find(p => p.id === PDedit), d); else PD.procesos.push(Object.assign({ id: Date.now() }, d));
+        PDedit = null; pdSave(); pdRender(); pdToast('Paso guardado', true);
+    }
+    function pdMover(i, d) { const j = i + d; if (j < 0 || j >= PD.procesos.length) return; [PD.procesos[i], PD.procesos[j]] = [PD.procesos[j], PD.procesos[i]]; pdSave(); pdRender(); }
+    function pdBorrar(id) { if (!confirm('¿Quitar este paso?')) return; PD.procesos = PD.procesos.filter(p => p.id !== id); pdSave(); pdRender(); pdToast('Paso quitado', true); }
+
+    function pdVistaDatos() {
+        const campo = f => `<label>${f[1]}<input type="number" min="0" ${f[2] === 'pct' ? 'max="100" step="0.1"' : ''} value="${isN(pdGet(f[0])) ? pdGet(f[0]) : ''}" onchange="pdSet('${f[0]}',this)"></label>`;
+        return `<div class="card" style="margin-bottom:14px;"><label style="font-size:11px;color:var(--muted);">Nombre de la empresa<input class="pd-in" value="${esc(PD.empresa)}" onchange="PD.empresa=this.value;PD.demo=false;pdSave();pdRender()"></label>${PD.demo ? txtP('Estos son datos de demostración. Al cambiar un número se guardan como tus datos.') : ''}</div>` +
+            PD_CAMPOS.map((g, i) => `<details class="pd-acc" ${i < 2 ? 'open' : ''}><summary>${g[0]}</summary><div class="pd-form" style="margin-top:12px;">${g[1].map(campo).join('')}</div></details>`).join('') +
+            `<button class="button secondary" onclick="pdExportar()">Descargar datos y escenarios (.json)</button><button class="button secondary" style="margin-left:8px;" onclick="pdDemo()">Volver a la demostración</button>`;
+    }
+    function pdSet(k, el) {
+        const raw = el.value.trim(); let v = raw === '' ? null : Number(raw);
+        if (v !== null && (!Number.isFinite(v) || v < 0)) { el.value = ''; return pdToast('Escribe un número de 0 en adelante.', false); }
+        if ((k === 'merma' || k === 'mermaAnt') && v > 100) { el.value = ''; return pdToast('Un porcentaje no puede pasar de 100.', false); }
+        if (k === 'inv.max' && v !== null && isN(PD.inv.min) && v < PD.inv.min) return pdToast('El máximo no puede ser menor que el mínimo.', false);
+        const p = k.split('.'); if (p.length === 2) PD[p[0]][p[1]] = v; else PD[k] = v;
+        PD.demo = false; pdSave(); pdRender(); pdToast('Guardado', true);
+    }
+    function pdDemo() { if (!confirm('Se borran tus datos y escenarios y vuelve la demostración. ¿Seguir?')) return; PD = PD_DEMO(); pdSave(); pdRender(); }
+    function pdExportar() {
+        const b = new Blob([JSON.stringify({ formato: 'PRISMA Production', version: '1.0', datos: PD, resumen: pdModelo(PD, {}) }, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'prisma-production.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 500);
+    }
+
+    /* ---- Simulador ---- */
+    const PD_SIM = [['trab', 'Trabajadores: sumar o quitar', 'number'], ['capPct', 'Capacidad del paso que frena (%)', 'number'], ['merma', 'Merma nueva (%) — vacío = igual que hoy', 'number'], ['demPct', 'Pedidos: subir o bajar (%)', 'number'], ['precioPct', 'Precio de venta (%)', 'number'], ['matPct', 'Costo de materia prima (%)', 'number'], ['salPct', 'Sueldos (%)', 'number'], ['inv', 'Inversión que haría falta ($)', 'number']];
+    function pdVistaSim() {
+        return `<div class="sim-grid"><div class="card"><h3>Si hicieras estos cambios${pdTag('sim')}</h3>${txtP('Sin guardar nada, el resultado cambia mientras escribes.')}<div class="pd-form" style="margin-top:12px;">${PD_SIM.map(f => `<label>${f[1]}<input type="${f[2]}" id="pds_${f[0]}" value="${PDS[f[0]]}" oninput="pdSimCalc()"></label>`).join('')}</div>
+            <div style="margin-top:16px;"><input class="pd-in" id="pds_nombre" placeholder="Nombre del escenario (ej. Comprar máquina)" value="${esc(PDS.nombre)}"><button class="button" onclick="pdGuardarEsc()">Guardar escenario</button><button class="button secondary" style="margin-left:8px;" onclick="pdLimpiarSim()">Limpiar</button></div></div><div id="pdSimOut"></div></div>`;
+    }
+    function pdLeerSim() {
+        const ch = {}; let err = '';
+        PD_SIM.forEach(f => { const el = document.getElementById('pds_' + f[0]); if (!el) return; PDS[f[0]] = el.value; if (el.value.trim() === '') { ch[f[0]] = f[0] === 'merma' ? '' : 0; return; } const n = Number(el.value); if (!Number.isFinite(n)) err = 'Escribe solo números.'; ch[f[0]] = n; });
+        if (ch.merma !== '' && (ch.merma < 0 || ch.merma > 100)) err = 'La merma debe estar entre 0 y 100.';
+        if (ch.inv < 0) err = 'La inversión no puede ser negativa.';
+        if (ch.demPct < -100 || ch.precioPct < -100 || ch.capPct < -100) err = 'Un cambio no puede bajar de -100%.';
+        if (PD.procesos.reduce((a, p) => a + (Number(p.trab) || 0), 0) + ch.trab <= 0) err = 'Tiene que quedar al menos 1 trabajador.';
+        return { ch, err };
+    }
+    function pdRoi(a, s, inv) {
+        const ben = s.utilidad - a.utilidad; if (!(inv > 0)) return null;
+        return { ben, roi: ben * 12 / inv * 100, meses: ben > 0 ? inv / ben : null };
+    }
+    function pdSimCalc() {
+        const out = document.getElementById('pdSimOut'); if (!out) return;
+        const a = pdModelo(PD, {}); if (!a) { out.innerHTML = '<div class="card"><h3>Información insuficiente</h3>' + txtP('Completa Procesos y Datos para poder simular.') + '</div>'; return; }
+        const { ch, err } = pdLeerSim(); if (err) { out.innerHTML = `<div class="card"><p style="color:var(--danger);font-size:13px;">${err}</p></div>`; return; }
+        const s = pdModelo(PD, ch), r = pdRoi(a, s, ch.inv);
+        out.innerHTML = `<div class="card">${pdTabla(a, s)}${r ? `<div class="analysis-box"><strong>Recuperar la inversión${pdTag('sim')}</strong><br>Inversión: ${fm(ch.inv)} · Mejora al mes: ${fm(r.ben)}<br>${r.meses ? 'Se recupera en ' + r.meses.toFixed(1) + ' meses · ROI al año: ' + r.roi.toFixed(0) + '%' : 'Con estos cambios la inversión no se recupera.'}</div>` : txtP('Escribe una inversión para ver en cuánto tiempo se recupera.')}${txtP(s.proc < PD.procesadas * (1 + ch.demPct / 100) - 1 ? 'Ojo: los pedidos pedidos no caben; se recortó a lo que alcanza a producir el paso que frena.' : '')}</div>`;
+    }
+    function pdTabla(a, s) {
+        const f = [['Cajas buenas al mes', a.buenas, s.buenas, pdN, true], ['Costo por caja', a.costoUnit, s.costoUnit, pdU, false], ['Merma', a.merma, s.merma, x => x.toFixed(1) + '%', false], ['Uso de la capacidad', a.util, s.util, x => x.toFixed(0) + '%', true], ['Cajas buenas por trabajador', a.prodTrab, s.prodTrab, pdN, true], ['Ganancia al mes', a.utilidad, s.utilidad, fm, true]];
+        return `<div class="pd-scroll"><table><thead><tr><th>Indicador</th><th>Hoy</th><th>Escenario${pdTag('sim')}</th><th></th></tr></thead><tbody>${f.map(x => `<tr><td>${x[0]}</td><td>${x[3](x[1])}</td><td><strong>${x[3](x[2])}</strong></td><td>${pdFlecha(x[1], x[2], x[4])}</td></tr>`).join('')}</tbody></table></div>`;
+    }
+    function pdLimpiarSim() { PDS = { trab: 0, capPct: 0, merma: '', precioPct: 0, matPct: 0, salPct: 0, demPct: 0, inv: 0, nombre: '' }; pdRender(); }
+    function pdGuardarEsc() {
+        const { ch, err } = pdLeerSim(), nombre = document.getElementById('pds_nombre').value.trim();
+        if (err) return pdToast(err, false);
+        if (!nombre) return pdToast('Ponle un nombre al escenario.', false);
+        if (PD.escenarios.some(e => e.nombre.toLowerCase() === nombre.toLowerCase())) return pdToast('Ya hay un escenario con ese nombre.', false);
+        if (!pdModelo(PD, {})) return pdToast('Faltan datos para simular.', false);
+        PD.escenarios.push({ id: Date.now(), nombre, ch }); PDS.nombre = ''; pdSave(); pdRender(); pdToast('Escenario guardado', true);
+    }
+
+    /* ---- Escenarios ---- */
+    function pdMejorEsc() {
+        const a = pdModelo(PD, {}); if (!a || !PD.escenarios.length) return null;
+        const L = PD.escenarios.map(e => { const s = pdModelo(PD, e.ch); return { e, s, ben: s.utilidad - a.utilidad, r: pdRoi(a, s, e.ch.inv) }; }).sort((x, y) => y.ben - x.ben), b = L[0];
+        let t = `"${b.e.nombre}" da la mayor mejora de ganancia: ${fm(b.ben)} al mes (simulación).`;
+        if (b.r && b.r.meses) t += ` Pide ${fm(b.e.ch.inv)} y se recupera en ${b.r.meses.toFixed(1)} meses${b.r.meses > 12 ? ', que es largo' : ''}.`;
+        const sinInv = L.filter(x => !(x.e.ch.inv > 0))[0]; if (sinInv && sinInv !== b) t += ` Sin invertir, la mejor es "${sinInv.e.nombre}" (${fm(sinInv.ben)} al mes).`;
+        return { texto: t };
+    }
+    function pdVistaEsc() {
+        const a = pdModelo(PD, {});
+        if (!a) return '<div class="card"><h3>Información insuficiente</h3>' + txtP('Completa Procesos y Datos para comparar escenarios.') + '</div>';
+        if (!PD.escenarios.length) return '<div class="card"><h3>Aún no hay escenarios</h3>' + txtP('Ve a Simulador, escribe los cambios y presiona Guardar escenario.') + '<button class="button" onclick="pdTab(\'simulador\')">Ir al simulador</button></div>';
+        const S = PD.escenarios.map(e => ({ e, s: pdModelo(PD, e.ch), r: pdRoi(a, pdModelo(PD, e.ch), e.ch.inv) })), b = pdMejorEsc();
+        const fila = (n, fa, g, mas) => `<tr><td>${n}</td><td>${fa(a)}</td>${S.map(x => `<td>${fa(x.s)} ${pdFlecha(g(a), g(x.s), mas)}</td>`).join('')}</tr>`;
+        return `<div class="card"><h3>Comparación${pdTag('sim')}</h3><div class="pd-scroll"><table><thead><tr><th>Indicador</th><th>Hoy</th>${S.map(x => `<th>${esc(x.e.nombre)}<br><button class="pd-mini" onclick="pdCargarEsc(${x.e.id})">Abrir</button><button class="pd-mini del" onclick="pdBorrarEsc(${x.e.id})">Borrar</button></th>`).join('')}</tr></thead><tbody>
+            ${fila('Cajas buenas al mes', x => pdN(x.buenas), x => x.buenas, true)}${fila('Costo por caja', x => pdU(x.costoUnit), x => x.costoUnit, false)}${fila('Merma', x => x.merma.toFixed(1) + '%', x => x.merma, false)}${fila('Ganancia al mes', x => fm(x.utilidad), x => x.utilidad, true)}
+            <tr><td>Inversión</td><td>—</td>${S.map(x => `<td>${x.e.ch.inv > 0 ? fm(x.e.ch.inv) : '—'}</td>`).join('')}</tr><tr><td>Se recupera en</td><td>—</td>${S.map(x => `<td>${x.r ? (x.r.meses ? x.r.meses.toFixed(1) + ' meses' : 'No se recupera') : '—'}</td>`).join('')}</tr></tbody></table></div></div>
+            <div class="card" style="margin-top:18px;"><h3>Escenario más conveniente${pdTag('sim')}</h3>${txtP(esc(b.texto))}${chBars('Cambio de la ganancia al mes contra hoy', S.map(x => ({ l: x.e.nombre, v: x.s.utilidad - a.utilidad })))}</div>`;
+    }
+    function pdCargarEsc(id) { const e = PD.escenarios.find(x => x.id === id); if (!e) return; PDS = Object.assign({}, e.ch, { merma: e.ch.merma === '' ? '' : e.ch.merma, nombre: '' }); PDtab = 'simulador'; pdRender(); }
+    function pdBorrarEsc(id) { if (!confirm('¿Borrar este escenario?')) return; PD.escenarios = PD.escenarios.filter(x => x.id !== id); pdSave(); pdRender(); }
+
+    pdRender();
+
+    renderState();
+
+
+    /* ------------------------------------------------------------------
+       ANALIZADOR DE PRODUCTO (v0.9)
+       Producto base = calculado desde Producción (PD). Productos extra y
+       gastos fijos = datos que escribe el usuario (se guardan en el
+       navegador; estructura lista para backend).
+    ------------------------------------------------------------------- */
+    const PR_KEY = 'prisma_products_v1';
+    const PR_GASTOS = [['desgaste','Desgaste de equipo'],['renta','Renta'],['sueldosAdm','Sueldos administrativos'],['internet','Internet y teléfono'],['software','Software'],['contabilidad','Contabilidad'],['seguros','Seguros y seguridad'],['limpieza','Limpieza y servicios'],['publicidad','Publicidad'],['mantGral','Mantenimiento general'],['bancarios','Gastos bancarios'],['otrosAdm','Otros administrativos']];
+    let PR = prLoad(), PRsel = 'base', PRmsg = '';
+    function prLoad() { try { const r = JSON.parse(localStorage.getItem(PR_KEY)); if (r && r.items) return r; } catch (e) {} return { items: [], gastos: {} }; }
+    function prSave() { try { localStorage.setItem(PR_KEY, JSON.stringify(PR)); } catch (e) { pdToast('No se pudo guardar en este navegador.'); } }
+    function prNum(v) { if (v === '' || v === null || v === undefined) return null; const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : null; }
+
+    function prProductos() {
+        const m = pdModelo(PD), out = [];
+        if (m && m.buenas > 0 && !(PR.fromDiag && PR.items.length)) out.push({ id: 'base', nombre: 'Producto principal (Producción)', tag: 'calc', precio: Number(PD.precio), unid: m.buenas,
+            variable: (m.costoMat + m.costoEn) / m.buenas, directo: m.costoMano / m.buenas, indirecto: 0, merma: m.merma, fijosProp: m.fijos });
+        PR.items.forEach(p => out.push({ id: p.id, nombre: p.nombre, tag: 'est', precio: p.precio, unid: p.unid,
+            variable: (p.mat / (1 - Math.min(p.merma, 90) / 100)) + p.en + p.emp, directo: p.mano, indirecto: p.ind, merma: p.merma, fijosProp: 0 }));
+        const gastos = Object.values(PR.gastos).reduce((a, v) => a + (Number(v) || 0), 0);
+        const pool = (m && !(PR.fromDiag && PR.items.length) ? m.fijos : 0) + gastos, ingTot = out.reduce((a, p) => a + p.precio * p.unid, 0);
+        out.forEach(p => {
+            p.ingresos = p.precio * p.unid;
+            p.fijoAsig = ingTot > 0 ? pool * p.ingresos / ingTot : 0;
+            p.costoUnit = p.variable + p.directo + p.indirecto + (p.unid > 0 ? p.fijoAsig / p.unid : 0);
+            p.utilUnit = p.precio - p.costoUnit;
+            p.margen = p.precio > 0 ? p.utilUnit / p.precio * 100 : 0;
+            p.contrib = p.precio - p.variable - p.directo - p.indirecto;
+            p.utilTotal = p.utilUnit * p.unid;
+            p.recursos = (p.variable + p.directo + p.indirecto) * p.unid;
+        });
+        return { lista: out, pool, gastos, hayBase: !!m };
+    }
+
+    function prBE(p) {
+        if (!(p.contrib > 0)) return null;
+        const u = p.fijoAsig / p.contrib;
+        return { u, mon: u * p.precio, seg: p.unid > 0 ? (p.unid - u) / p.unid * 100 : 0, cm: p.contrib / p.precio * 100 };
+    }
+
+    function prChart(p, be) {
+        const W = 520, H = 230, L = 52, B = 28, xmax = Math.max(p.unid, be.u) * 1.3 || 1;
+        const ymax = Math.max(p.precio * xmax, p.fijoAsig + (p.precio - p.contrib) * xmax) * 1.05 || 1;
+        const X = u => L + u / xmax * (W - L - 10), Y = v => H - B - v / ymax * (H - B - 10);
+        const ing = [X(0), Y(0), X(xmax), Y(p.precio * xmax)], cos = [X(0), Y(p.fijoAsig), X(xmax), Y(p.fijoAsig + (p.precio - p.contrib) * xmax)];
+        return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:100%;height:auto" role="img" aria-label="Gráfica del punto de equilibrio">
+          <line x1="${L}" y1="${H - B}" x2="${W - 10}" y2="${H - B}" stroke="currentColor" opacity=".25"/><line x1="${L}" y1="10" x2="${L}" y2="${H - B}" stroke="currentColor" opacity=".25"/>
+          <line x1="${ing[0]}" y1="${ing[1]}" x2="${ing[2]}" y2="${ing[3]}" stroke="#2f7d5b" stroke-width="2.5"/>
+          <line x1="${cos[0]}" y1="${cos[1]}" x2="${cos[2]}" y2="${cos[3]}" stroke="#c0533a" stroke-width="2.5"/>
+          <line x1="${X(be.u)}" y1="10" x2="${X(be.u)}" y2="${H - B}" stroke="currentColor" stroke-dasharray="4 4" opacity=".5"/>
+          <circle cx="${X(be.u)}" cy="${Y(be.mon)}" r="5" fill="#d9a21b"/>
+          <text x="${X(be.u) + 6}" y="22" font-size="11" fill="currentColor">Equilibrio: ${pdN(be.u)} u</text>
+          <text x="${W - 12}" y="${Math.max(ing[3] + 14, 24)}" font-size="11" text-anchor="end" fill="#2f7d5b">Ingresos</text>
+          <text x="${W - 12}" y="${cos[3] - 6}" font-size="11" text-anchor="end" fill="#c0533a">Costos totales</text>
+          <text x="${L}" y="${H - 8}" font-size="10" fill="currentColor" opacity=".7">0</text><text x="${W - 10}" y="${H - 8}" font-size="10" text-anchor="end" fill="currentColor" opacity=".7">${pdN(xmax)} unidades</text></svg>`;
+    }
+
+    function prRender() {
+        const el = document.getElementById('prBody'); if (!el) return;
+        const d = prProductos(), L = d.lista;
+        if (!L.length) { el.innerHTML = '<div class="card"><p>Datos insuficientes para calcular este indicador. Completa los datos en la pantalla Producción o agrega un producto abajo.</p></div>' + prForms(d); return; }
+        if (!L.some(p => p.id == PRsel)) PRsel = L[0].id;
+        const p = L.find(x => x.id == PRsel), be = prBE(p);
+        const top = (f, max) => L.slice().sort((a, b) => max ? f(b) - f(a) : f(a) - f(b))[0].nombre;
+        const opts = L.map(x => `<option value="${esc(x.id)}" ${x.id == PRsel ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('');
+        el.innerHTML = `
+        <div class="card" style="margin-bottom:14px"><label style="font-size:13px">Producto a revisar </label>
+            <select onchange="PRsel=this.value;prRender()" style="max-width:100%;padding:6px">${opts}</select> ${pdTag(p.tag)}
+            ${p.tag === 'est' ? '<p style="font-size:12px;color:var(--muted)">Estos costos los escribiste tú como estimación.</p>' : ''}</div>
+        <div class="metrics-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px">
+            ${pdKpi('Costo por unidad', pdU(p.costoUnit), 'calc')}${pdKpi('Precio de venta', pdU(p.precio), p.tag === 'calc' ? 'real' : 'est')}
+            ${pdKpi('Utilidad por unidad', pdU(p.utilUnit), 'calc')}${pdKpi('Margen', p.margen.toFixed(1) + '%', 'calc')}
+            ${pdKpi('Contribución por unidad', pdU(p.contrib), 'calc')}${pdKpi('Unidades al mes', pdN(p.unid), p.tag === 'calc' ? 'calc' : 'est')}
+            ${pdKpi('Ingresos al mes', '$' + pdN(p.ingresos), 'calc')}${pdKpi('Utilidad al mes', '$' + pdN(p.utilTotal), 'calc')}</div>
+        <div class="card" style="margin-bottom:14px"><h3>¿De qué está hecho el costo de cada unidad?</h3>
+            ${pdBar('1. Costo variable (materia, energía, empaque)', p.variable, p.costoUnit)}${pdBar('2. Costo directo (mano de obra)', p.directo, p.costoUnit)}
+            ${pdBar('3. Costo indirecto', p.indirecto, p.costoUnit)}${pdBar('4. Gasto fijo asignado', p.unid > 0 ? p.fijoAsig / p.unid : 0, p.costoUnit)}
+            ${txtP('Los gastos fijos se reparten según cuánto ingreso deja cada producto. ' + (d.pool > 0 ? 'Total de gastos fijos del mes: $' + pdN(d.pool) + '.' : 'Aún no hay gastos fijos capturados (dato pendiente).'))}</div>
+        <div class="card" style="margin-bottom:14px"><h3>Punto de equilibrio</h3>
+            ${be ? `<div class="metrics-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+                ${pdKpi('En unidades', pdN(be.u), 'calc')}${pdKpi('En dinero', '$' + pdN(be.mon), 'calc')}${pdKpi('Margen de contribución', be.cm.toFixed(1) + '%', 'calc')}${pdKpi('Margen de seguridad', be.seg.toFixed(1) + '%', 'calc')}</div>${prChart(p, be)}
+                ${txtP(be.seg < 0 ? 'Hoy se vende menos que el punto de equilibrio: este producto no cubre sus gastos.' : 'Se puede vender ' + be.seg.toFixed(1) + '% menos antes de perder dinero con este producto.')}`
+              : '<p>Datos insuficientes para calcular este indicador: el precio no cubre los costos por unidad, así que no hay punto de equilibrio.</p>'}</div>
+        <div class="card" style="margin-bottom:14px"><h3>Comparador de productos</h3><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tr style="text-align:left"><th>Producto</th><th>Costo/u</th><th>Utilidad/u</th><th>Margen</th><th>Utilidad mes</th><th>Merma</th></tr>
+            ${L.map(x => `<tr><td>${esc(x.nombre)}</td><td>${pdU(x.costoUnit)}</td><td>${pdU(x.utilUnit)}</td><td>${x.margen.toFixed(1)}%</td><td>$${pdN(x.utilTotal)}</td><td>${x.merma.toFixed(1)}%</td></tr>`).join('')}</table></div>
+            ${L.length > 1 ? `<ul style="font-size:13px;line-height:1.8;margin-top:10px"><li>Más rentable (utilidad total): <b>${esc(top(x => x.utilTotal, 1))}</b></li><li>Menos rentable: <b>${esc(top(x => x.utilTotal, 0))}</b></li>
+            <li>Mayor margen: <b>${esc(top(x => x.margen, 1))}</b></li><li>Consume más recursos: <b>${esc(top(x => x.recursos, 1))}</b></li><li>Mayor merma: <b>${esc(top(x => x.merma, 1))}</b></li></ul>` : txtP('Agrega otro producto para compararlos.')}</div>` + prForms(d);
+    }
+
+    function prForms(d) {
+        const g = PR.gastos, campo = (id, lbl) => `<label style="font-size:12px;display:block">${lbl}<input id="${id}" type="number" min="0" step="any" style="width:100%;padding:6px"></label>`;
+        return `<div class="card" style="margin-bottom:14px"><h3>Agregar un producto</h3>${PRmsg ? `<p style="color:#c0533a;font-size:13px">${esc(PRmsg)}</p>` : ''}
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+            <label style="font-size:12px">Nombre<input id="prN" type="text" style="width:100%;padding:6px"></label>
+            ${campo('prP', 'Precio por unidad ($)')}${campo('prU', 'Unidades al mes')}${campo('prM', 'Materia prima por unidad ($)')}${campo('prO', 'Mano de obra por unidad ($)')}
+            ${campo('prE', 'Energía por unidad ($)')}${campo('prEm', 'Empaque por unidad ($)')}${campo('prI', 'Costo indirecto por unidad ($)')}${campo('prMe', 'Merma (%)')}</div>
+            <button class="btn-import" style="margin-top:10px" onclick="prAgregar()">Guardar producto</button> <button class="btn-import" style="margin-top:10px" onclick="prQuitar()">Quitar el último agregado</button></div>
+          <div class="card"><h3>Gastos fijos del mes ${pdTag(Object.keys(g).length ? 'est' : 'pend')}</h3>
+            <p style="font-size:12px;color:var(--muted)">Se suman a los costos fijos de Producción. Déjalo vacío si no lo sabes.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">${PR_GASTOS.map(([k, l]) => `<label style="font-size:12px">${l}<input type="number" min="0" step="any" value="${g[k] ?? ''}" onchange="prGasto('${k}',this)" style="width:100%;padding:6px"></label>`).join('')}</div></div>`;
+    }
+
+    function prGasto(k, el) {
+        if (el.value === '') { delete PR.gastos[k]; } else { const n = prNum(el.value); if (n === null) { pdToast('Escribe un número de 0 o más.'); el.value = PR.gastos[k] ?? ''; return; } PR.gastos[k] = n; }
+        prSave(); prRender();
+    }
+    function prAgregar() {
+        const v = id => document.getElementById(id).value, nombre = v('prN').trim();
+        const o = { precio: prNum(v('prP')), unid: prNum(v('prU')), mat: prNum(v('prM')), mano: prNum(v('prO')), en: prNum(v('prE')) ?? 0, emp: prNum(v('prEm')) ?? 0, ind: prNum(v('prI')) ?? 0, merma: prNum(v('prMe')) ?? 0 };
+        const keep = ['prN', 'prP', 'prU', 'prM', 'prO', 'prE', 'prEm', 'prI', 'prMe'].map(i => [i, v(i)]);
+        const back = () => { prRender(); keep.forEach(([i, x]) => { document.getElementById(i).value = x; }); };
+        if (!nombre) { PRmsg = 'Escribe un nombre.'; return back(); }
+        if (o.precio === null || o.precio <= 0 || o.unid === null || o.unid <= 0 || o.mat === null || o.mano === null) { PRmsg = 'Precio y unidades deben ser mayores que 0, y materia prima y mano de obra números de 0 o más.'; return back(); }
+        if (o.merma >= 90) { PRmsg = 'La merma debe ser menor a 90%.'; return back(); }
+        PRmsg = ''; PR.items.push(Object.assign({ id: 'p' + Date.now(), nombre }, o)); prSave(); PRsel = PR.items[PR.items.length - 1].id; prRender();
+    }
+    function prQuitar() { if (!PR.items.length) return; if (!confirm('¿Quitar el último producto agregado?')) return; PR.items.pop(); PRsel = 'base'; prSave(); prRender(); }
+
+
+    /* ------------------------------------------------------------------
+       GROWTH (v0.10): embudo, publicidad por canal y simulador comercial.
+       Lo que ya sabe el Diagnóstico (state.com) no se vuelve a pedir.
+    ------------------------------------------------------------------- */
+    const GR_KEY = 'prisma_growth_v1';
+    const GR_ETAPAS = [['pros','Prospectos'],['cont','Contactados'],['cot','Cotizaciones'],['neg','Negociaciones'],['ven','Ventas cerradas']];
+    let GR = grLoad(), GRmsg = '', GRdraft = null;
+    function grLoad() { try { const r = JSON.parse(localStorage.getItem(GR_KEY)); if (r && r.canales) return r; } catch (e) {} return { emb: {}, canales: [] }; }
+    function grSave() { try { localStorage.setItem(GR_KEY, JSON.stringify(GR)); } catch (e) { pdToast('No se pudo guardar en este navegador.'); } }
+    const grPct = (a, b) => b > 0 ? (a / b * 100).toFixed(1) + '%' : '—';
+    const grPend = '<p>Datos insuficientes para calcular este indicador.</p>';
+
+    const GRO = {};
+    function grRender() {
+        const el = document.getElementById('grBody'); if (!el) return;
+        const c = state.com || {}, V = state.ventas, tg = /demo/i.test(state.empresa) ? 'est' : 'real';
+        const mc = V > 0 ? 1 - state.variables / V : null, E = GR.emb, dr = GRdraft || E;
+        const ok = GR_ETAPAS.every(([k]) => isN(E[k]));
+        const ticket = isN(c.ticket) ? c.ticket : null;
+        const kp = (l, v, t) => pdKpi(l, v === null || v === undefined ? 'Pendiente' : v, v === null || v === undefined ? 'pend' : t);
+        let h = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px">
+            ${kp('Ventas del mes', '$' + pdN(V), tg)}${kp('Clientes activos', isN(c.clientes) ? pdN(c.clientes) : null, tg)}${kp('Ticket promedio', ticket !== null ? '$' + pdN(ticket) : null, tg)}
+            </div><details class="pd-acc" style="margin-bottom:14px"><summary>Ver más números</summary><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:12px">${kp('Clientes que vuelven', isN(c.rec) ? c.rec + '%' : null, tg)}${kp('Clientes nuevos al mes', isN(c.nuevos) ? pdN(c.nuevos) : null, tg)}${kp('Margen de contribución', mc !== null ? (mc * 100).toFixed(1) + '%' : null, 'calc')}</div></details>`;
+        if (isN(c.top1)) h += `<div class="card" style="margin-bottom:14px"><h3>Riesgo comercial</h3>${txtP('El producto principal es ' + c.top1 + '% de las ventas. ' + (c.top1 >= 50 ? 'Es mucha dependencia: si ese producto baja, las ventas se resienten.' : 'La dependencia es moderada.'))}</div>`;
+        h += `<details class="pd-acc" ${GRO.emb ? 'open' : ''} ontoggle="GRO.emb = this.open" style="margin-bottom:14px"><summary>Embudo de ventas ${pdTag(ok ? 'est' : 'pend')}<small>Cuántas personas llegan y cuántas terminan comprando</small></summary>${GRmsg ? `<p style="color:#c0533a;font-size:13px">${esc(GRmsg)}</p>` : ''}
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">${GR_ETAPAS.map(([k, l]) => `<label style="font-size:12px">${l}<input id="gr_${k}" type="number" min="0" step="1" value="${dr[k] ?? ''}" style="width:100%;padding:6px"></label>`).join('')}
+            <label style="font-size:12px">Días promedio para cerrar<input id="gr_dias" type="number" min="0" step="any" value="${dr.dias ?? ''}" style="width:100%;padding:6px"></label></div>
+            <button class="btn-import" style="margin-top:10px" onclick="grGuardarEmb()">Guardar embudo</button>`;
+        if (ok) {
+            const mx = E.pros || 1, perd = E.cot - E.ven;
+            h += GR_ETAPAS.map(([k, l], i) => pdBar(l + (i ? ' (' + grPct(E[k], E[GR_ETAPAS[i - 1][0]]) + ' de la etapa anterior)' : ''), E[k], mx)).join('') +
+                `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:10px">${pdKpi('Tasa de cierre', grPct(E.ven, E.pros), 'calc')}${pdKpi('Tiempo de cierre', isN(E.dias) ? E.dias + ' días' : 'Pendiente', isN(E.dias) ? 'est' : 'pend')}
+                ${pdKpi('Cotizaciones sin cerrar', pdN(perd), 'calc')}${pdKpi('Dinero en esas cotizaciones', ticket !== null ? '$' + pdN(perd * ticket) : 'Pendiente', ticket !== null ? 'est' : 'pend')}</div>
+                ${ticket === null ? txtP('Para valorar lo perdido falta el ticket promedio (viene del Archivo PRISMA).') : txtP('El valor perdido usa el ticket promedio, por eso es una estimación.')}`;
+        } else h += txtP('Escribe cuántas personas hay en cada etapa del mes. Mientras falten, el embudo no se calcula.');
+        h += '</details>';
+        const cs = GR.canales.map(x => { const u = mc !== null ? x.ing * mc - x.inv : null; return Object.assign({ cpl: x.pros > 0 ? x.inv / x.pros : null, cac: x.cli > 0 ? x.inv / x.cli : null, roas: x.inv > 0 ? x.ing / x.inv : null, conv: x.pros > 0 ? x.cli / x.pros * 100 : null, util: u }, x); });
+        const f = v => v === null ? 'Pendiente' : pdU(v);
+        h += `<details class="pd-acc" ${GRO.can ? 'open' : ''} ontoggle="GRO.can = this.open" style="margin-bottom:14px"><summary>Publicidad por canal ${pdTag(cs.length ? 'est' : 'pend')}<small>Qué canal deja más dinero por lo que se invierte</small></summary>
+            ${cs.length ? `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="text-align:left"><th>Canal</th><th>Inversión</th><th>Costo por prospecto</th><th>Costo por cliente</th><th>Retorno (ROAS)</th><th>Conversión</th><th>Utilidad</th><th></th></tr>
+            ${cs.map(x => `<tr><td>${esc(x.nombre)}</td><td>${pdU(x.inv)}</td><td>${f(x.cpl)}</td><td>${f(x.cac)}</td><td>${x.roas === null ? 'Pendiente' : x.roas.toFixed(2) + 'x'}</td><td>${x.conv === null ? 'Pendiente' : x.conv.toFixed(1) + '%'}</td><td style="color:${x.util !== null && x.util < 0 ? '#c0533a' : 'inherit'}">${f(x.util)}</td><td><button class="btn-import" onclick="grQuitar('${x.id}')">Quitar</button></td></tr>`).join('')}</table></div>
+            ${txtP('La utilidad es: ingresos × margen de contribución − inversión. El mejor canal por retorno: <b>' + esc(cs.filter(x => x.roas !== null).sort((a, b) => b.roas - a.roas)[0]?.nombre || 'pendiente') + '</b>.')}` : txtP('Aún no hay canales. Agrega uno abajo (por ejemplo Facebook, WhatsApp, visitas).')}
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px"><label style="font-size:12px">Canal<input id="gc_n" type="text" style="width:100%;padding:6px"></label>
+            ${[['gc_i', 'Inversión ($)'], ['gc_p', 'Prospectos'], ['gc_c', 'Clientes logrados'], ['gc_g', 'Ingresos ($)']].map(([i, l]) => `<label style="font-size:12px">${l}<input id="${i}" type="number" min="0" step="any" style="width:100%;padding:6px"></label>`).join('')}</div>
+            <button class="btn-import" style="margin-top:10px" onclick="grAgregar()">Agregar canal</button></details>`;
+        h += `<details class="pd-acc" ${GRO.sim ? 'open' : ''} ontoggle="GRO.sim = this.open"><summary>Simulador comercial ${pdTag('sim')}<small>Qué pasa si cambias el precio, la publicidad o los cierres</small></summary><div style="height:12px"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">
+            <label style="font-size:12px">Precio: cambio (%)<input id="gs_p" type="number" value="0" oninput="grSim()" style="width:100%;padding:6px"></label>
+            <label style="font-size:12px">Cuánto bajan las ventas por cada 1% de alza (estimación)<input id="gs_e" type="number" min="0" step="any" value="1" oninput="grSim()" style="width:100%;padding:6px"></label>
+            <label style="font-size:12px">Publicidad: cambio (%)<input id="gs_a" type="number" value="0" oninput="grSim()" style="width:100%;padding:6px"></label>
+            <label style="font-size:12px">Cierres: subir (puntos %)<input id="gs_c" type="number" value="0" oninput="grSim()" style="width:100%;padding:6px"></label></div><div id="grSimOut" style="margin-top:12px"></div></details>`;
+        el.innerHTML = h; grSim();
+    }
+
+    function grGuardarEmb() {
+        const d = {}; GR_ETAPAS.forEach(([k]) => { d[k] = document.getElementById('gr_' + k).value; }); d.dias = document.getElementById('gr_dias').value;
+        GRdraft = d; const bad = msg => { GRmsg = msg; grRender(); };
+        const vals = GR_ETAPAS.map(([k]) => prNum(d[k]));
+        if (vals.some(v => v === null || !Number.isInteger(v))) return bad('Escribe números enteros de 0 o más en todas las etapas.');
+        for (let i = 1; i < vals.length; i++) if (vals[i] > vals[i - 1]) return bad('Cada etapa no puede ser mayor que la anterior.');
+        if (d.dias !== '' && prNum(d.dias) === null) return bad('Los días deben ser un número de 0 o más.');
+        GRmsg = ''; GRdraft = null; GR.emb = {}; GR_ETAPAS.forEach(([k], i) => { GR.emb[k] = vals[i]; }); if (d.dias !== '') GR.emb.dias = Number(d.dias);
+        grSave(); grRender();
+    }
+    function grAgregar() {
+        const v = i => document.getElementById(i).value, nombre = v('gc_n').trim(), o = { inv: prNum(v('gc_i')), pros: prNum(v('gc_p')), cli: prNum(v('gc_c')), ing: prNum(v('gc_g')) };
+        const keep = ['gc_n', 'gc_i', 'gc_p', 'gc_c', 'gc_g'].map(i => [i, v(i)]);
+        if (!nombre || Object.values(o).some(x => x === null) || o.cli > o.pros) { pdToast('Revisa: nombre, números de 0 o más, y clientes no pueden ser más que prospectos.'); return; }
+        GR.canales.push(Object.assign({ id: 'c' + Date.now(), nombre }, o)); grSave(); grRender();
+    }
+    function grQuitar(id) { GR.canales = GR.canales.filter(x => x.id !== id); grSave(); grRender(); }
+
+    function grSim() {
+        const out = document.getElementById('grSimOut'); if (!out) return;
+        const g = i => { const n = Number(document.getElementById(i).value); return Number.isFinite(n) ? n : 0; };
+        const p = g('gs_p'), e = Math.max(0, g('gs_e')), a = g('gs_a'), cv = g('gs_c');
+        const V = state.ventas, Va = state.variables, F = state.fijos, c = state.com || {};
+        if (!(V > 0)) { out.innerHTML = grPend; return; }
+        if (p <= -100 || a <= -100) { out.innerHTML = '<p style="color:#c0533a">Los cambios no pueden ser de -100% o menos.</p>'; return; }
+        const fv = Math.max(0, 1 - e * p / 100), tI = GR.canales.reduce((x, y) => x + y.inv, 0), tG = GR.canales.reduce((x, y) => x + y.ing, 0);
+        let V1 = V * (1 + p / 100) * fv, Va1 = Va * fv, F1 = F, notas = [];
+        const sumar = ing => { V1 += ing; Va1 += ing * Va / V; };
+        if (a !== 0) { if (tI > 0 && tG > 0) { const ex = tI * a / 100; F1 += ex; sumar(ex * tG / tI); notas.push('Se supone que la publicidad extra rinde igual que la de hoy.'); } else notas.push('Publicidad: datos insuficientes (agrega canales).'); }
+        if (cv !== 0) { if (GR.emb.pros > 0 && isN(c.ticket)) sumar(GR.emb.pros * cv / 100 * c.ticket); else notas.push('Cierres: datos insuficientes (falta embudo o ticket).'); }
+        const u0 = V - Va - F, u1 = V1 - Va1 - F1, row = (l, x, y, pct, mm) => `<tr><td>${l}</td><td>${pct ? x.toFixed(1) + '%' : '$' + pdN(x)}</td><td>${pct ? y.toFixed(1) + '%' : '$' + pdN(y)}</td><td>${pdFlecha(x, y, mm !== false)}</td></tr>`;
+        out.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="text-align:left"><th>Mes</th><th>Hoy</th><th>Escenario</th><th></th></tr>
+            ${row('Ventas', V, V1)}${row('Costos (variables + fijos)', Va + F, Va1 + F1, false, false)}${row('Utilidad', u0, u1)}${row('Margen', u0 / V * 100, V1 > 0 ? u1 / V1 * 100 : 0, true)}</table></div>
+            ${txtP('Simulación, no predicción. ' + notas.join(' '))}`;
+    }
+
+
+    /* ------------------------------------------------------------------
+       HERRAMIENTAS DIGITALES + AHORRO Y AMBIENTE (v0.11)
+       Lo que escribe el usuario se guarda en el navegador. Nada se inventa:
+       sin dato = "Pendiente".
+    ------------------------------------------------------------------- */
+    const DG_KEY = 'prisma_digital_v1', SU_KEY = 'prisma_sust_v1';
+    const DG_AREAS = [['admin','Administración'],['ventas','Ventas'],['prod','Producción'],['inv','Inventarios'],['com','Comunicación'],['alm','Guardar información'],['seg','Seguridad'],['auto','Tareas automáticas']];
+    const DG_NIV = ['', 'Nivel 1: Manual', 'Nivel 2: Digital básico', 'Nivel 3: Integrado', 'Nivel 4: Automatizado', 'Nivel 5: Inteligente'];
+    const ldJ = (k, d) => { try { const r = JSON.parse(localStorage.getItem(k)); if (r) return r; } catch (e) {} return d; };
+    const svJ = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { pdToast('No se pudo guardar en este navegador.'); } };
+    let DG = ldJ(DG_KEY, { niv: {}, horas: {}, pct: 30, costoHora: '' }), SU = ldJ(SU_KEY, { opps: [] });
+    const nOr = v => isN(v) ? Number(v) : null;
+    const numIn = (val, cb, max) => `<input type="number" min="0" ${max ? 'max="' + max + '"' : ''} step="any" value="${val ?? ''}" onchange="${cb}" style="width:100%;padding:6px">`;
+
+    function dgSet(grp, k, el) {
+        if (el.value === '') delete DG[grp][k]; else { const n = prNum(el.value); if (n === null) { pdToast('Escribe un número de 0 o más.'); el.value = DG[grp][k] ?? ''; return; } DG[grp][k] = n; }
+        svJ(DG_KEY, DG); dgRender();
+    }
+    function dgSetGlobal(k, el) {
+        const n = el.value === '' ? '' : prNum(el.value);
+        if (n === null || (k === 'pct' && n > 100)) { pdToast('Escribe un número válido (el porcentaje, de 0 a 100).'); el.value = DG[k]; return; }
+        DG[k] = n; svJ(DG_KEY, DG); dgRender();
+    }
+    function dgNivel(k, el) { if (el.value) DG.niv[k] = Number(el.value); else delete DG.niv[k]; svJ(DG_KEY, DG); dgRender(); }
+
+    function dgRender() {
+        const el = document.getElementById('dgBody'); if (!el) return;
+        const ev = DG_AREAS.filter(([k]) => DG.niv[k]), prom = ev.length ? ev.reduce((a, [k]) => a + DG.niv[k], 0) / ev.length : null;
+        const pct = nOr(DG.pct) ?? 30, ch = nOr(DG.costoHora);
+        const filas = ev.map(([k, l]) => { const h = nOr(DG.horas[k]), niv = DG.niv[k], ah = h !== null && niv <= 2 ? h * pct / 100 : 0;
+            return { k, l, niv, h, ah, din: ch !== null ? ah * ch : null, pri: niv <= 2 && h !== null ? (h >= 20 ? 'alta' : h >= 8 ? 'media' : 'baja') : (niv <= 2 ? 'media' : 'baja') }; });
+        const cand = filas.filter(f => f.niv <= 2).sort((a, b) => b.ah - a.ah), totAh = cand.reduce((a, f) => a + f.ah, 0);
+        const d = state.areas && state.areas.digitalizacion;
+        el.innerHTML = `<div class="card" style="margin-bottom:14px"><h3>¿Qué tan digital es cada área? ${pdTag(ev.length ? 'est' : 'pend')}</h3>
+            ${txtP('Elige el nivel de cada área. Es tu propia evaluación, por eso es una estimación.' + (isN(d) ? ' El Diagnóstico dio ' + d + '/100 en herramientas digitales.' : ''))}
+            <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="text-align:left"><th>Área</th><th>Nivel</th><th>Horas al mes que se hacen a mano</th></tr>
+            ${DG_AREAS.map(([k, l]) => `<tr><td>${l}</td><td><select onchange="dgNivel('${k}',this)" style="padding:5px;max-width:100%"><option value="">Pendiente</option>${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${DG.niv[k] === n ? 'selected' : ''}>${DG_NIV[n]}</option>`).join('')}</select></td><td>${numIn(DG.horas[k], `dgSet('horas','${k}',this)`)}</td></tr>`).join('')}</table></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px"><label style="font-size:12px">Qué % del tiempo manual se podría ahorrar (supuesto)${numIn(DG.pct, "dgSetGlobal('pct',this)", 100)}</label>
+            <label style="font-size:12px">Costo de una hora de trabajo ($, opcional)${numIn(DG.costoHora, "dgSetGlobal('costoHora',this)")}</label></div></div>
+          <div class="card"><h3>Resultado</h3>${prom === null ? grPend : `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">${pdKpi('Nivel promedio', prom.toFixed(1) + ' de 5', 'est')}${pdKpi('Áreas evaluadas', ev.length + ' de ' + DG_AREAS.length, 'real')}${pdKpi('Horas ahorrables al mes', totAh ? pdN(totAh) : 'Pendiente', totAh ? 'est' : 'pend')}${pdKpi('Dinero ahorrable al mes', ch !== null && totAh ? '$' + pdN(totAh * ch) : 'Pendiente', ch !== null && totAh ? 'est' : 'pend')}</div>
+            ${txtP('Etapa de la empresa: <b>' + DG_NIV[Math.round(prom)] + '</b>. ' + (ev.length < DG_AREAS.length ? 'Faltan ' + (DG_AREAS.length - ev.length) + ' áreas por evaluar.' : ''))}
+            <h3 style="margin-top:14px">Qué conviene digitalizar primero</h3>${cand.length ? cand.map(f => pdBar(f.l + ' · ' + DG_NIV[f.niv] + (f.h === null ? ' · horas pendientes' : ' · ' + f.ah.toFixed(0) + ' h ahorrables') + ' · prioridad ' + f.pri, f.ah, cand[0].ah || 1, f.pri === 'alta')).join('') : txtP('Ninguna área evaluada está en nivel 1 o 2.')}`}</div>`;
+    }
+
+    /* ---------- Ahorro y ambiente ---------- */
+    function suSet(k, el, max) {
+        if (el.value === '') delete SU[k]; else { const n = prNum(el.value); if (n === null || (max && n > max)) { pdToast('Escribe un número válido' + (max ? ' (de 0 a ' + max + ')' : ' de 0 o más') + '.'); el.value = SU[k] ?? ''; return; } SU[k] = n; }
+        svJ(SU_KEY, SU); suRender();
+    }
+    function suAgregar() {
+        const v = i => document.getElementById(i).value, nombre = v('so_n').trim(), o = { act: prNum(v('so_c')), ahorro: prNum(v('so_a')), inv: prNum(v('so_i')) };
+        if (!nombre || o.ahorro === null || o.ahorro <= 0 || o.inv === null || (v('so_c') !== '' && o.act === null)) { pdToast('Revisa: nombre, ahorro mensual mayor que 0 e inversión de 0 o más.'); return; }
+        SU.opps.push(Object.assign({ id: 'o' + Date.now(), nombre, rec: v('so_r') }, o)); svJ(SU_KEY, SU); suRender();
+    }
+    function suQuitar(id) { SU.opps = SU.opps.filter(x => x.id !== id); svJ(SU_KEY, SU); suRender(); }
+
+    function suRender() {
+        const el = document.getElementById('suBody'); if (!el) return;
+        const m = pdModelo(PD), u = m ? m.buenas : null, per = v => v !== null && u > 0 ? v / u : null;
+        const inp = (k, l, max) => `<label style="font-size:12px">${l}${numIn(SU[k], `suSet('${k}',this${max ? ',' + max : ''})`, max)}</label>`;
+        const grid = c => `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:8px">${c}</div>`;
+        const kwhU = per(nOr(SU.kwh)), aguaU = per(nOr(SU.m3)), resU = per(nOr(SU.kgRes));
+        const co2 = isN(SU.litros) && isN(SU.factor) ? SU.litros * SU.factor : null;
+        const mermaCosto = m ? m.costoMat * m.merma / 100 : null;
+        const sc = {
+            'Energía': isN(SU.metaKwh) && kwhU > 0 ? Math.min(100, SU.metaKwh / kwhU * 100) : null,
+            'Agua': nOr(SU.pctReuAg), 'Materiales': m ? 100 - m.merma : null,
+            'Residuos': isN(SU.pctRec) && isN(SU.pctReu) ? Math.min(100, SU.pctRec + SU.pctReu) : null,
+            'Transporte': nOr(SU.pctVacios) !== null ? 100 - SU.pctVacios : null, 'Eficiencia': m ? Math.min(100, m.util) : null };
+        const how = { 'Energía': 'tu meta de kWh por unidad ÷ lo que gastas hoy', 'Agua': '% de agua que se reutiliza', 'Materiales': '100 − % de merma (de Producción)', 'Residuos': '% reciclado + % reutilizado', 'Transporte': '100 − % de viajes vacíos', 'Eficiencia': '% de capacidad usada (de Producción)' };
+        const ok = Object.entries(sc).filter(([, v]) => v !== null), gen = ok.length ? ok.reduce((a, [, v]) => a + v, 0) / ok.length : null;
+        const opps = SU.opps.map(o => { const pb = o.inv / o.ahorro; return Object.assign({ anual: o.ahorro * 12, pb, pri: pb <= 12 ? 'alta' : pb <= 24 ? 'media' : 'baja' }, o); }).sort((a, b) => a.pb - b.pb);
+        el.innerHTML = `<div class="card" style="margin-bottom:14px"><h3>Datos del mes ${pdTag('est')}</h3>${txtP('Escribe lo que sepas. Lo que dejes vacío queda como pendiente.')}
+            <b style="font-size:13px">Energía</b>${grid(inp('kwh', 'Electricidad (kWh)') + inp('costoEn', 'Costo de luz ($)') + inp('costoGas', 'Gas o combustible de planta ($)') + inp('metaKwh', 'Meta: kWh por unidad'))}
+            <b style="font-size:13px;display:block;margin-top:10px">Agua</b>${grid(inp('m3', 'Consumo (m³)') + inp('costoAg', 'Costo ($)') + inp('pctReuAg', '% reutilizado', 100))}
+            <b style="font-size:13px;display:block;margin-top:10px">Residuos</b>${grid(inp('kgRes', 'Residuos (kg)') + inp('costoRes', 'Costo de manejo ($)') + inp('pctRec', '% reciclado', 100) + inp('pctReu', '% reutilizado', 100))}
+            <b style="font-size:13px;display:block;margin-top:10px">Transporte</b>${grid(inp('litros', 'Combustible (litros)') + inp('km', 'Kilómetros') + inp('viajes', 'Viajes') + inp('pctVacios', '% de viajes vacíos', 100) + inp('factor', 'Factor de emisión (kg CO₂e por litro, de una fuente oficial)'))}</div>
+          <div class="card" style="margin-bottom:14px"><h3>Lo que muestran tus datos</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
+            ${pdKpi('Energía por unidad', kwhU !== null ? kwhU.toFixed(2) + ' kWh' : 'Pendiente', kwhU !== null ? 'calc' : 'pend')}${pdKpi('Agua por unidad', aguaU !== null ? aguaU.toFixed(3) + ' m³' : 'Pendiente', aguaU !== null ? 'calc' : 'pend')}
+            ${pdKpi('Residuos por unidad', resU !== null ? resU.toFixed(3) + ' kg' : 'Pendiente', resU !== null ? 'calc' : 'pend')}${pdKpi('CO₂e del combustible', co2 !== null ? pdN(co2) + ' kg' : 'Pendiente', co2 !== null ? 'est' : 'pend')}
+            ${pdKpi('Costo de la merma al mes', mermaCosto !== null ? '$' + pdN(mermaCosto) : 'Pendiente', mermaCosto !== null ? 'est' : 'pend')}</div>
+            ${u === null ? txtP('Para calcular "por unidad" faltan datos completos en Producción.') : ''}${mermaCosto !== null ? txtP('Merma de ' + m.merma.toFixed(1) + '%: es material comprado que se pierde. Es la oportunidad de ahorro más clara con los datos que ya hay (costo estimado = materia prima × % de merma).') : ''}</div>
+          <div class="card" style="margin-bottom:14px"><h3>Índice de sostenibilidad ${pdTag(ok.length ? 'calc' : 'pend')}</h3>
+            ${Object.keys(sc).map(k => sc[k] === null ? `<p style="font-size:13px"><b>${k}:</b> datos insuficientes para calcular este indicador</p>` : pdBar(k + ' · ' + sc[k].toFixed(0) + '/100', sc[k], 100, sc[k] < 50)).join('')}
+            ${gen !== null ? txtP('<b>Promedio: ' + gen.toFixed(0) + '/100</b> con ' + ok.length + ' de 6 partes.') : ''}
+            ${txtP('Cómo se calcula cada parte: ' + Object.keys(how).map(k => k + ' = ' + how[k]).join('; ') + '. No hay puntajes inventados.')}</div>
+          <div class="card"><h3>Oportunidades de ahorro</h3>
+            ${opps.length ? `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="text-align:left"><th>Oportunidad</th><th>Recurso</th><th>Costo actual/mes</th><th>Inversión</th><th>Ahorro/mes</th><th>Ahorro/año</th><th>Se recupera en</th><th>Prioridad</th><th></th></tr>
+            ${opps.map(o => `<tr><td>${esc(o.nombre)}</td><td>${esc(o.rec)}</td><td>${o.act === null ? 'Pendiente' : '$' + pdN(o.act)}</td><td>$${pdN(o.inv)}</td><td>$${pdN(o.ahorro)}</td><td>$${pdN(o.anual)}</td><td>${o.inv === 0 ? 'Inmediato' : o.pb.toFixed(1) + ' meses'}</td><td>${pdBadge(o.pri)}</td><td><button class="btn-import" onclick="suQuitar('${o.id}')">Quitar</button></td></tr>`).join('')}</table></div>` : txtP('Aún no agregas oportunidades. El impacto en el ambiente queda pendiente: no se estima sin datos.')}
+            ${grid(`<label style="font-size:12px">Qué se haría<input id="so_n" type="text" style="width:100%;padding:6px"></label><label style="font-size:12px">Recurso<select id="so_r" style="width:100%;padding:6px">${['Energía', 'Agua', 'Materiales', 'Merma', 'Transporte', 'Residuos', 'Procesos'].map(x => `<option>${x}</option>`).join('')}</select></label><label style="font-size:12px">Costo actual al mes ($, opcional)<input id="so_c" type="number" min="0" step="any" style="width:100%;padding:6px"></label><label style="font-size:12px">Ahorro al mes ($)<input id="so_a" type="number" min="0" step="any" style="width:100%;padding:6px"></label><label style="font-size:12px">Inversión ($)<input id="so_i" type="number" min="0" step="any" style="width:100%;padding:6px"></label>`)}
+            <button class="btn-import" style="margin-top:10px" onclick="suAgregar()">Agregar oportunidad</button></div>`;
+    }
+
+
+    /* ------------------------------------------------------------------
+       CARGA DE LAS SECCIONES NUEVAS DEL ARCHIVO PRISMA 1.2 (v0.12)
+       Lee producción, productos, gastos fijos, Growth, sostenibilidad y
+       digital. Solo carga lo que existe; lo que falta queda "Pendiente".
+    ------------------------------------------------------------------- */
+    function aplicarSeccionesLab(data) {
+        const rep = [], f = v => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v))) ? null : Number(v), z = v => f(v) ?? 0;
+        try {
+            const lp = data.lab_pd;
+            if (lp && typeof lp === 'object') {
+                const c = lp.costos || {}, iv = lp.inv || {};
+                const hd = f(lp.dias) > 0 && f(lp.horasPlan) > 0 ? f(lp.horasPlan) / f(lp.dias) : null;   // horas de trabajo por día
+                PD = { demo: false, empresa: (data.empresa && data.empresa.nombre) || '', dias: f(lp.dias), procesadas: f(lp.procesadas), merma: f(lp.merma), mermaAnt: f(lp.mermaAnt), precio: f(lp.precio),
+                    horasPlan: f(lp.horasPlan), horasParo: f(lp.horasParo), velIdeal: f(lp.velIdeal),
+                    costos: { materia: f(c.materia), manoObra: f(c.manoObra), energia: f(c.energia), mantenimiento: f(c.mantenimiento), depreciacion: f(c.depreciacion), otros: f(c.otros) },
+                    inv: { stock: f(iv.stock), min: f(iv.min), max: f(iv.max), consumo: f(iv.consumo) },
+                    procesos: (lp.procesos || []).map((p, i) => ({ id: i + 1, nombre: String(p.nombre || 'Proceso ' + (i + 1)), desc: '', cap: hd && f(p.cap) !== null ? Math.round(f(p.cap) * hd) : null, trab: f(p.trab), maq: f(p.maq) })),
+                    estados: {}, escenarios: PD.demo ? [] : PD.escenarios };
+                pdSave(); if (typeof pdRender === 'function') pdRender(); rep.push(hd ? 'producción (capacidad por hora convertida a por día con ' + hd.toFixed(1) + ' h al día)' : 'producción (capacidad pendiente: faltan horas planeadas o días)');
+            }
+            const ps = Array.isArray(data.productos) ? data.productos : [], items = [];
+            ps.forEach((p, i) => { if (f(p.precio) > 0 && f(p.unidades) > 0) items.push({ id: 'd' + i, nombre: String(p.nombre || 'Producto ' + (i + 1)), precio: f(p.precio), unid: f(p.unidades),
+                mat: z(p.materia) + z(p.insumos), mano: z(p.mano), en: z(p.energia), emp: z(p.empaque), ind: z(p.indirectos), merma: Math.min(z(p.merma), 89) }); });
+            const gd = data.gastos_fijos_detalle || {}, mapG = { renta: 'renta', sueldos_administrativos: 'sueldosAdm', internet: 'internet', telefono: 'internet', software: 'software', contabilidad: 'contabilidad', seguros: 'seguros', seguridad: 'seguros', limpieza: 'limpieza', servicios: 'limpieza', publicidad: 'publicidad', mantenimiento_general: 'mantGral', desgaste_equipo: 'desgaste', gastos_bancarios: 'bancarios', otros: 'otrosAdm' }, gastos = {};
+            Object.keys(mapG).forEach(k => { if (f(gd[k]) !== null) gastos[mapG[k]] = (gastos[mapG[k]] || 0) + f(gd[k]); });
+            if (items.length || Object.keys(gastos).length) { PR = { items, gastos, fromDiag: items.length > 0 }; prSave(); rep.push('productos y gastos fijos'); }
+            const g = data.growth || {}, e = g.embudo || {}, emb = {};
+            [['pros', 'prospectos'], ['cont', 'contactados'], ['cot', 'cotizaciones'], ['neg', 'negociaciones'], ['ven', 'ventas_cerradas'], ['dias', 'dias_cierre']].forEach(([k, o]) => { if (f(e[o]) !== null) emb[k] = f(e[o]); });
+            const can = (g.canales || []).filter(x => x.nombre && f(x.inversion) !== null).map((x, i) => ({ id: 'dc' + i, nombre: String(x.nombre), inv: f(x.inversion), pros: z(x.prospectos), cli: Math.min(z(x.clientes), z(x.prospectos)), ing: z(x.ingresos) }));
+            if (Object.keys(emb).length || can.length) { GR = { emb, canales: can }; grSave(); rep.push('embudo y publicidad'); }
+            const dg = data.digital || {}, mapD = { administracion: 'admin', ventas: 'ventas', produccion: 'prod', inventarios: 'inv', comunicacion: 'com', guardar_informacion: 'alm', seguridad: 'seg', tareas_automaticas: 'auto' }, niv = {}, hor = {};
+            Object.keys(mapD).forEach(k => { const l = dg[k] && f(dg[k].level); if (l >= 1 && l <= 5) niv[mapD[k]] = l; if (dg.horas && f(dg.horas[k]) !== null) hor[mapD[k]] = f(dg.horas[k]); });
+            if (Object.keys(niv).length) { DG = Object.assign({}, DG, { niv, horas: hor }); svJ(DG_KEY, DG); rep.push('herramientas digitales'); }
+            const so = data.sostenibilidad;
+            if (so && typeof so === 'object') {
+                const el = so.electricidad || {}, ga = so.gas_combustible || {}, ag = so.agua || {}, tr = so.transporte || {}, rs = Array.isArray(so.residuos) ? so.residuos : [], N = { opps: SU.opps || [] };
+                const put = (k, v) => { if (f(v) !== null) N[k] = f(v); };
+                put('kwh', el.kwh); put('costoEn', el.costo); put('metaKwh', el.meta_kwh_unidad); put('costoGas', ga.costo); put('m3', ag.m3); put('costoAg', ag.costo); put('pctReuAg', ag.reutilizado_pct);
+                put('litros', tr.litros); put('km', tr.km); put('viajes', tr.viajes); put('pctVacios', tr.vacios_pct); put('factor', tr.factor_co2e);
+                const kg = rs.reduce((a, x) => a + z(x.cantidad), 0);
+                if (rs.length && kg > 0) { N.kgRes = kg; N.costoRes = rs.reduce((a, x) => a + z(x.costo), 0); N.pctRec = Math.min(100, rs.reduce((a, x) => a + z(x.cantidad) * z(x.reciclado_pct), 0) / kg); N.pctReu = Math.min(100, rs.reduce((a, x) => a + z(x.cantidad) * z(x.reutilizado_pct), 0) / kg); }
+                SU = N; svJ(SU_KEY, SU); rep.push('sostenibilidad');
+            }
+        } catch (err) { console.error('Error al leer secciones nuevas', err); rep.push('(algunas secciones nuevas no se pudieron leer)'); }
+        return rep;
+    }
+
+
+    /* Modo claro / oscuro (se recuerda en este navegador) */
+    function updThemeBtn() { const d = document.documentElement.getAttribute('data-theme') === 'dark', b = document.getElementById('themeBtn'); if (b) b.textContent = d ? 'Modo claro' : 'Modo oscuro'; }
+    function toggleTheme() {
+        const d = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (d) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', 'dark');
+        try { localStorage.setItem('prisma_lab_theme', d ? 'light' : 'dark'); } catch (e) {}
+        updThemeBtn();
+    }
+    updThemeBtn();
+
+    (function initFx() {
+        const sb = document.querySelector('.sidebar'); if (!sb) return;
+        const ind = document.createElement('div'); ind.className = 'nav-ind'; sb.appendChild(ind); sb.classList.add('has-ind');
+        const place = () => moveNavInd(document.querySelector('.nav-item.active'));
+        place(); requestAnimationFrame(() => requestAnimationFrame(() => ind.classList.add('ready')));
+        addEventListener('resize', place); if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+        addEventListener('load', () => { place(); animarPagina(); });
+        document.addEventListener('mousemove', e => { const c = e.target.closest && e.target.closest('.card'); if (c) { const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px'); } }, { passive: true });
+        const cta = document.querySelector('.top-actions .btn-import:nth-of-type(2)');
+        if (cta && !NAV_RM()) {
+            cta.addEventListener('mousemove', e => { const r = cta.getBoundingClientRect(); cta.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .18}px,${(e.clientY - r.top - r.height / 2) * .28}px) scale(1.05)`; });
+            cta.addEventListener('mouseleave', () => { cta.style.transform = ''; });
+        }
+    })();
+
+    const PM_F = [["0b5cad", "332,86 365,149 331,207 297,150", 0, -1, 0, 3], ["1e90ff", "296,153 329,211 291,277 225,277", -1, -0.4, 1, 5], ["f5a623", "368,153 437,277 374,277 337,213", 1, -0.4, 2, 5], ["38b6ff", "292,280 257,341 187,341 222,280", -1, 0.7, 3, 8], ["12a8c9", "331,215 261,341 402,341 350,246", 0, 1, 4, 7], ["ffcb47", "373,280 441,280 476,341 407,341", 1, 0.7, 5, 9]];
+    const PM = (c = '') => '<svg class="pm go ' + c + '" viewBox="180 80 306 266" aria-hidden="true">' + PM_F.map(f => `<polygon class="f" points="${f[1]}" fill="#${f[0]}" style="--dx:${f[2]};--dy:${f[3]};--k:${f[4]};--d:${f[5]}"/>`).join('') + '<g clip-path="url(#pmClip)"><rect class="sheen" x="0" y="70" width="46" height="290" fill="url(#pmSheen)"/></g></svg>';
+    (function initFx2() {
+                const fx = document.createElement('div'); fx.className = 'bg-fx'; fx.innerHTML = '<i></i><i></i><i></i>'; document.body.prepend(fx);
+        document.querySelectorAll('.page-header').forEach(h => h.insertAdjacentHTML('afterbegin', '<div class="deco">' + PM() + '</div>'));
+        const sp = document.createElement('div'); sp.className = 'scroll-bar'; document.body.appendChild(sp);
+        const upd = () => { const h = document.documentElement.scrollHeight - innerHeight; sp.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, scrollY / h) : 0) + ')'; };
+        addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); new ResizeObserver(upd).observe(document.body); upd();
+        if (NAV_RM()) return;
+        const root = document.documentElement; let raf = 0, mx = 0, my = 0;
+        document.addEventListener('mousemove', e => {
+            mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5;
+            if (!raf) raf = requestAnimationFrame(() => { raf = 0; root.style.setProperty('--px', (mx * 2).toFixed(3)); root.style.setProperty('--py', (my * 2).toFixed(3)); });
+            const c = e.target.closest && e.target.closest('.metric-card'); if (!c) return;
+            const r = c.getBoundingClientRect();
+            c.style.setProperty('--ry', (((e.clientX - r.left) / r.width - .5) * 9).toFixed(2) + 'deg');
+            c.style.setProperty('--rx', ((.5 - (e.clientY - r.top) / r.height) * 9).toFixed(2) + 'deg');
+        }, { passive: true });
+        document.addEventListener('mouseout', e => { const c = e.target.closest && e.target.closest('.metric-card'); if (c && !c.contains(e.relatedTarget)) { c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); } });
+    })();
+
+    (function initFx3() {
+        document.body.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><clipPath id="pmClip"><polygon points="332,84 482,344 183,344"/></clipPath><linearGradient id="pmSheen" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".65"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>');
+        const bm = document.getElementById('brandMark'); if (bm) bm.innerHTML = PM();
+        let seen = false; try { seen = sessionStorage.getItem('pmSplash'); sessionStorage.setItem('pmSplash', '1'); } catch (e) {}
+        if (NAV_RM() || seen) return;
+        const sp = document.createElement('div'); sp.id = 'pmSplash';
+        sp.innerHTML = '<div class="sp-in">' + PM('sp-mark') + '<div class="sp-word">' + 'PRISMA'.split('').map((l, i) => `<b style="--i:${i}">${l}</b>`).join('') + '</div><div class="sp-tag">Marketing · Finanzas · Sustentabilidad</div></div>';
+        document.body.appendChild(sp);
+        const out = () => { if (sp.classList.contains('out')) return; sp.classList.add('out'); setTimeout(() => { sp.remove(); animarPagina(); }, 850); };
+        setTimeout(out, 2600); sp.addEventListener('click', out); addEventListener('keydown', out, { once: true });
+    })();
+</script>
+
+</body>
+</html>

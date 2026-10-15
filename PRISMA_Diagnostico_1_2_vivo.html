@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="es-MX" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRISMA Diagnóstico 1.2 — Herramienta de Inteligencia PyME</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        prisma: {
+                            50: '#f4f6f8',
+                            100: '#e2e8f0',
+                            600: '#1e3a8a',
+                            750: '#0f172a',
+                            900: '#090d16',
+                            accent: '#d97706'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Playfair Display & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700;800&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-editorial { font-family: 'Playfair Display', Georgia, serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    
+        /* ===== Vida y movimiento (tomado de PRISMA Lab 0.21) ===== */
+        :root { --e: cubic-bezier(.2,.8,.2,1); }
+        .fade-in { animation: fadeIn .65s var(--e) both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+        .wizard-pane.leaving { opacity: 0; transform: translateY(-10px); transition: opacity .18s ease, transform .18s ease; }
+        .wizard-pane > div:first-child { position: relative; }
+
+        /* aparecer al bajar */
+        .rv { opacity: 0; transform: translateY(26px); }
+        .rv.in { opacity: 1; transform: none; transition: opacity .75s var(--e) var(--d,0ms), transform .85s var(--e) var(--d,0ms); }
+
+        /* barras que crecen */
+        @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        .grow-x { transform-origin: left; animation: grow 1s var(--e) .25s both; }
+
+        /* luz que sigue al cursor en las tarjetas */
+        .fx-card { position: relative; isolation: isolate; }
+        .fx-card::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .4s; background: radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(255,203,71,.17), transparent 62%); }
+        .fx-card:hover::before { opacity: 1; }
+
+        /* cifras con inclinación y línea de color */
+        .tilt { position: relative; transition: transform .35s var(--e), box-shadow .35s; }
+        .tilt:hover { transform: perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-5px); box-shadow: 0 18px 34px -14px rgba(11,92,173,.32); }
+        .tilt::after { content: ""; position: absolute; left: 16px; bottom: 8px; height: 3px; width: 26px; border-radius: 3px; background: #0b5cad; transition: width .55s var(--e); }
+        .tilt:nth-child(4n+2)::after { background: #12a8c9; }
+        .tilt:nth-child(4n+3)::after { background: #ffcb47; }
+        .tilt:nth-child(4n)::after { background: #f5a623; }
+        .tilt:hover::after { width: calc(100% - 32px); }
+
+        /* fondo con luces que se mueven */
+        .bg-fx { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; transform: translate(calc(var(--px,0)*-22px), calc(var(--py,0)*-14px)); transition: transform .9s ease-out; }
+        .bg-fx i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .24; will-change: transform; }
+        .bg-fx i:nth-child(1) { width: 46vw; height: 46vw; left: -8vw; top: -14vw; background: #1e90ff; animation: drift1 26s ease-in-out infinite alternate; }
+        .bg-fx i:nth-child(2) { width: 38vw; height: 38vw; right: -10vw; top: 28vh; background: #12a8c9; animation: drift2 31s ease-in-out infinite alternate; }
+        .bg-fx i:nth-child(3) { width: 36vw; height: 36vw; left: 34vw; bottom: -18vw; background: #ffcb47; opacity: .32; animation: drift1 35s ease-in-out infinite alternate-reverse; }
+        .dark .bg-fx i { opacity: .14; }
+        @keyframes drift1 { to { transform: translate(9vw,6vw) scale(1.16); } }
+        @keyframes drift2 { to { transform: translate(-8vw,-7vw) scale(1.12); } }
+
+        /* barra de avance al bajar */
+        .scroll-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 1001; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg,#0b5cad,#1e90ff,#12a8c9,#ffcb47); transition: transform .12s linear; pointer-events: none; }
+
+        /* títulos palabra por palabra */
+        .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0 .04em .14em; margin: 0 -.04em -.14em; }
+        .w i { display: inline-block; font-style: normal; font-weight: inherit; font-family: inherit; transform: translateY(110%); animation: wordUp .95s var(--e) both; animation-delay: calc(var(--k)*90ms + 120ms); }
+        @keyframes wordUp { to { transform: none; } }
+
+        /* el prisma del logo */
+        .brand-mark { display: block; width: 46px; height: 40px; flex: none; filter: drop-shadow(0 8px 14px rgba(11,92,173,.28)); animation: floaty 5s ease-in-out infinite; }
+        .brand-mark .pm { width: 100%; height: 100%; overflow: visible; }
+        @keyframes floaty { 50% { transform: translateY(-3px) rotate(-3deg); } }
+        .deco { position: absolute; right: 28px; top: 14px; width: 128px; height: 112px; pointer-events: none; }
+        .deco .pm { width: 100%; height: 100%; overflow: visible; }
+        .pm .f { transform-box: fill-box; transform-origin: center; translate: calc(var(--px,0)*var(--d)*1px) calc(var(--py,0)*var(--d)*1px); transition: translate .55s ease-out, rotate .5s var(--e), scale .5s var(--e); }
+        .pm.go .f { animation: pmIn 1.1s cubic-bezier(.2,1.2,.3,1) calc(var(--k)*90ms) both, pmWave 6s ease-in-out calc(1.5s + var(--k)*.4s) infinite; }
+        @keyframes pmIn { from { opacity: 0; transform: translate(calc(var(--dx)*60px), calc(var(--dy)*60px)) rotate(calc(var(--dx)*24deg)) scale(.3); } to { opacity: 1; transform: none; } }
+        @keyframes pmWave { 50% { transform: translate(calc(var(--dx)*2.6px), calc(var(--dy)*2.6px)); } }
+        .pm:hover .f { translate: calc(var(--dx)*8px + var(--px,0)*var(--d)*1px) calc(var(--dy)*8px + var(--py,0)*var(--d)*1px); rotate: calc(var(--dx)*5deg); scale: 1.05; }
+        .pm .sheen { transform-origin: 0 0; animation: sheen 7s ease-in-out 2.2s infinite; }
+        @keyframes sheen { 0% { transform: translateX(120px) skewX(-20deg); } 35%,100% { transform: translateX(540px) skewX(-20deg); } }
+        @media (max-width: 1023px) { .deco { display: none; } }
+        #step-7 .deco { display: none; }
+
+        /* pantalla de entrada */
+        #pmSplash { position: fixed; inset: 0; z-index: 2000; background: #f8fafc; display: grid; place-items: center; transition: opacity .8s var(--e), transform .8s var(--e); }
+        .dark #pmSplash { background: #020617; }
+        #pmSplash.out { opacity: 0; transform: scale(1.05); pointer-events: none; }
+        .sp-in { display: grid; justify-items: center; gap: 26px; }
+        .sp-mark { width: min(34vw,220px); height: auto; overflow: visible; filter: drop-shadow(0 24px 40px rgba(11,92,173,.25)); }
+        .sp-word { display: flex; }
+        .sp-word b { font: 600 34px Poppins, "Trebuchet MS", sans-serif; letter-spacing: .42em; color: #0f2f5f; opacity: 0; transform: translateY(16px); animation: spl .8s var(--e) calc(1s + var(--i)*80ms) forwards; }
+        .sp-word b:last-child { margin-right: -.42em; }
+        .dark .sp-word b { color: #f1f5f9; }
+        .sp-tag { font: 500 12px Poppins, sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #2f6fb3; opacity: 0; animation: spl .9s var(--e) 1.7s forwards; }
+        .dark .sp-tag { color: #7fb6e8; }
+        @keyframes spl { to { opacity: 1; transform: none; } }
+
+        /* línea que se desliza bajo los pasos */
+        .step-ind { position: absolute; left: 0; top: 0; height: 3px; border-radius: 3px; background: linear-gradient(90deg,#0b5cad,#1e90ff,#12a8c9,#ffcb47); pointer-events: none; }
+        .step-ind.ready { transition: transform .55s cubic-bezier(.3,1.25,.4,1), width .4s var(--e); }
+        @keyframes pop { 40% { transform: scale(1.35); } }
+        .step-btn .pop { animation: pop .6s var(--e); }
+        button:active { scale: .97; }
+
+        /* pie con el lema */
+        .pm-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 28px; padding: 28px 16px 40px; }
+        .pm-foot .pm-mini { width: 38px; height: 33px; }
+        .pm-foot .pm-mini .pm { width: 100%; height: 100%; overflow: visible; }
+        .rail-tag { display: flex; flex-wrap: wrap; gap: 8px 22px; font: 500 11px Poppins, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #2f6fb3; }
+        .dark .rail-tag { color: #7fb6e8; }
+        .rail-tag span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 10px; transform: rotate(45deg); background: var(--c); animation: tick 3.6s ease-in-out infinite; animation-delay: calc(var(--i)*.6s); }
+        @keyframes tick { 50% { transform: rotate(45deg) scale(1.55); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before { animation: none !important; transition: none !important; }
+            .rv { opacity: 1; transform: none; }
+            .w i { transform: none; }
+            .scroll-bar { transition: none; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="brand-mark" id="brandMark" aria-hidden="true"></span>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold font-editorial tracking-tight">PRISMA <span class="text-blue-600 dark:text-blue-400 font-sans text-sm font-semibold uppercase px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 rounded-full ml-1 border border-blue-200 dark:border-blue-900">Diagnóstico 1.2</span></h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Inteligencia empresarial compatible con PRISMA Lab</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <button onclick="cargarDemo()" class="hidden md:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 transition">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Demo Cartonera</span>
+                </button>
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Cambiar tema">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+                <div class="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
+                <div class="text-right hidden sm:block">
+                    <span id="save-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+                        <span class="w-1.5 h-1.5 mr-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Sincronizado
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-2 py-3 min-w-max">
+                <button onclick="goToStep(1)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="1">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">1</span>
+                    <span>Empresa</span>
+                </button>
+                <button onclick="goToStep(2)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="2">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">2</span>
+                    <span>Finanzas</span>
+                </button>
+                <button onclick="goToStep(3)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="3">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">3</span>
+                    <span>Comercial & Growth</span>
+                </button>
+                <button onclick="goToStep(4)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="4">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">4</span>
+                    <span>Operaciones & Prod.</span>
+                </button>
+                <button onclick="goToStep(5)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="5">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">5</span>
+                    <span>Digitalización</span>
+                </button>
+                <button onclick="goToStep(6)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="6">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">6</span>
+                    <span>Sostenibilidad</span>
+                </button>
+                <button onclick="goToStep(7)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="7">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">7</span>
+                    <span>Resultados & Hallazgos</span>
+                </button>
+                <button onclick="goToStep(8)" class="step-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition" data-step="8">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">8</span>
+                    <span>Archivo PRISMA</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- STEP 1: EMPRESA -->
+        <section id="step-1" class="wizard-pane space-y-6 fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 1 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Identidad de la Empresa</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Proporciona los datos generales de tu PyME para personalizar el diagnóstico y el Archivo PRISMA.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Nombre de la Empresa</label>
+                        <input type="text" id="emp-nombre" oninput="updateEmpresa('nombre', this.value)" placeholder="Ej. Cartonera del Bajío S.A. de C.V." class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Giro o Sector</label>
+                        <input type="text" id="emp-giro" oninput="updateEmpresa('giro', this.value)" placeholder="Ej. Manufactura de empaques de cartón" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Ubicación (Ciudad, Estado)</label>
+                        <input type="text" id="emp-ubicacion" oninput="updateEmpresa('ubicacion', this.value)" placeholder="Ej. León, Guanajuato" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Antigüedad (Años o Fecha)</label>
+                        <input type="text" id="emp-antiguedad" oninput="updateEmpresa('antiguedad', this.value)" placeholder="Ej. 8 años" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Número de Empleados</label>
+                        <input type="number" id="emp-empleados" oninput="updateEmpresa('empleados', parseInt(this.value)||null)" placeholder="Ej. 35" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Producto o Servicio Principal</label>
+                        <input type="text" id="emp-producto_principal" oninput="updateEmpresa('producto_principal', this.value)" placeholder="Ej. Cajas de cartón corrugado impresas" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Objetivo Actual del Negocio</label>
+                    <textarea id="emp-objetivo_actual" oninput="updateEmpresa('objetivo_actual', this.value)" rows="3" placeholder="Ej. Optimizar costos de producción y expandir cobertura a la región occidente." class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition"></textarea>
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button onclick="nextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center space-x-2">
+                        <span>Siguiente: Finanzas</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: FINANZAS & GASTOS FIJOS -->
+        <section id="step-2" class="wizard-pane space-y-6 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 2 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Finanzas y Gastos Fijos Detalle</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Ingresa las cifras monetarias mensuales (en MXN) para calcular la salud financiera y el punto de equilibrio.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Ventas Mensuales (MXN)</label>
+                        <input type="number" id="fin-ventas" oninput="updateCifra('ventas_mensuales', parseFloat(this.value)||null)" placeholder="Ej. 1250000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Costos Variables (MXN)</label>
+                        <input type="number" id="fin-variables" oninput="updateCifra('costos_variables', parseFloat(this.value)||null)" placeholder="Ej. 750000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Gastos Fijos Totales (MXN)</label>
+                        <input type="number" id="fin-fijos" oninput="updateCifra('gastos_fijos', parseFloat(this.value)||null)" placeholder="Ej. 300000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Utilidad Declarada Mensual</label>
+                        <input type="number" id="fin-utilidad" oninput="updateCifra('utilidad_declarada', parseFloat(this.value)||null)" placeholder="Ej. 200000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Deuda Total Actual</label>
+                        <input type="number" id="fin-deuda" oninput="updateCifra('deuda_total', parseFloat(this.value)||null)" placeholder="Ej. 500000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Liquidez Disponible (Caja/Bancos)</label>
+                        <input type="number" id="fin-liquidez" oninput="updateCifra('liquidez_disponible', parseFloat(this.value)||null)" placeholder="Ej. 180000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-6">
+                    <h3 class="text-lg font-bold font-editorial mb-4">Desglose Detallado de Gastos Fijos (MXN / mes)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="gastos-fijos-container">
+                        <!-- Generated via JS for 15 categories -->
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="nextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center space-x-2">
+                        <span>Siguiente: Comercial & Growth</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: COMERCIAL, MARKETING & GROWTH -->
+        <section id="step-3" class="wizard-pane space-y-6 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 3 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Comercial, Marketing & Growth</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Analiza tus métricas de ventas, embudo de conversión y dependencia de clientes.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Clientes Activos Promedio</label>
+                        <input type="number" id="com-clientes" oninput="updateCom('clientes', parseInt(this.value)||null)" placeholder="Ej. 120" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Ticket Promedio (MXN)</label>
+                        <input type="number" id="com-ticket" oninput="updateCom('ticket', parseFloat(this.value)||null)" placeholder="Ej. 10400" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Recurrencia de Compra (%)</label>
+                        <input type="number" id="com-rec" oninput="updateCom('rec', parseFloat(this.value)||null)" placeholder="Ej. 65" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Clientes Nuevos al Mes</label>
+                        <input type="number" id="com-nuevos" oninput="updateCom('nuevos', parseInt(this.value)||null)" placeholder="Ej. 12" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Canal Principal de Ventas</label>
+                        <input type="text" id="com-canal" oninput="updateCom('canal', this.value)" placeholder="Ej. Ventas directas B2B" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">% Ventas por Internet / Digital</label>
+                        <input type="number" id="com-inter" oninput="updateCom('inter', parseFloat(this.value)||null)" placeholder="Ej. 20" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Dependencia Top 1 Cliente (%)</label>
+                        <input type="number" id="com-top1" oninput="updateCom('top1', parseFloat(this.value)||null)" placeholder="Ej. 35" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Dependencia Top 3 Clientes (%)</label>
+                        <input type="number" id="com-top3" oninput="updateCom('top3', parseFloat(this.value)||null)" placeholder="Ej. 65" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Capacidad Ociosa Comercial (%)</label>
+                        <input type="number" id="com-ocio" oninput="updateCom('ocio', parseFloat(this.value)||null)" placeholder="Ej. 25" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 outline-none text-sm transition">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-6 mb-6">
+                    <h3 class="text-lg font-bold font-editorial mb-4">Embudo de Ventas (Growth)</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Prospectos</label>
+                            <input type="number" id="emb-prospectos" oninput="updateEmbudo('prospectos', parseInt(this.value)||null)" placeholder="Ej. 300" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Contactados</label>
+                            <input type="number" id="emb-contactados" oninput="updateEmbudo('contactados', parseInt(this.value)||null)" placeholder="Ej. 200" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Cotizaciones</label>
+                            <input type="number" id="emb-cotizaciones" oninput="updateEmbudo('cotizaciones', parseInt(this.value)||null)" placeholder="Ej. 80" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Negociaciones</label>
+                            <input type="number" id="emb-negociaciones" oninput="updateEmbudo('negociaciones', parseInt(this.value)||null)" placeholder="Ej. 30" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Cerradas</label>
+                            <input type="number" id="emb-cerradas" oninput="updateEmbudo('ventas_cerradas', parseInt(this.value)||null)" placeholder="Ej. 12" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Días de Cierre</label>
+                            <input type="number" id="emb-dias" oninput="updateEmbudo('dias_cierre', parseInt(this.value)||null)" placeholder="Ej. 14" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="nextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center space-x-2">
+                        <span>Siguiente: Operaciones & Producción</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: OPERACIONES, PRODUCCIÓN & PRODUCTOS -->
+        <section id="step-4" class="wizard-pane space-y-6 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 4 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Operaciones, Producción & Productos</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Registra capacidad de planta, mermas, costos de producción y catálogo de productos para PRISMA Lab.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Días Operativos al Mes</label>
+                        <input type="number" id="lab-dias" oninput="updateLabPd('dias', parseInt(this.value)||null)" placeholder="Ej. 24" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Unidades Procesadas Mes</label>
+                        <input type="number" id="lab-procesadas" oninput="updateLabPd('procesadas', parseInt(this.value)||null)" placeholder="Ej. 15000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Merma Actual (%)</label>
+                        <input type="number" id="lab-merma" oninput="updateLabPd('merma', parseFloat(this.value)||null)" placeholder="Ej. 4.5" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Merma Anterior (%)</label>
+                        <input type="number" id="lab-mermaAnt" oninput="updateLabPd('mermaAnt', parseFloat(this.value)||null)" placeholder="Ej. 7.0" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Precio Unitario Promedio (MXN)</label>
+                        <input type="number" id="lab-precio" oninput="updateLabPd('precio', parseFloat(this.value)||null)" placeholder="Ej. 85.00" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Horas Paro / Mes</label>
+                        <input type="number" id="lab-horasParo" oninput="updateLabPd('horasParo', parseFloat(this.value)||null)" placeholder="Ej. 18" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-6 mb-6">
+                    <h3 class="text-lg font-bold font-editorial mb-4">Costos Globales de Producción (Mensual)</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="lab-costos-container">
+                        <!-- Generated via JS -->
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold font-editorial">Catálogo de Productos Principales</h3>
+                        <button onclick="addProductRow()" class="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 rounded-lg text-xs font-semibold hover:bg-blue-100 transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Agregar Producto
+                        </button>
+                    </div>
+                    <div id="productos-list" class="space-y-4">
+                        <!-- Dynamic product cards -->
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="nextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center space-x-2">
+                        <span>Siguiente: Digitalización</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 5: DIGITALIZACIÓN -->
+        <section id="step-5" class="wizard-pane space-y-6 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 5 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Madurez Digital & Automatización</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Evalúa el nivel tecnológico (1 al 5) y las horas manuales invertidas en las áreas clave de tu empresa.</p>
+                </div>
+
+                <div class="space-y-6" id="digital-areas-container">
+                    <!-- Generated via JS for 8 digital areas -->
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="nextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center space-x-2">
+                        <span>Siguiente: Sostenibilidad</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 6: SOSTENIBILIDAD -->
+        <section id="step-6" class="wizard-pane space-y-6 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 6 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Eficiencia Energética & Sostenibilidad</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Mide el consumo de recursos, agua, energía y gestión de residuos para el estándar ecológico.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
+                        <h3 class="font-bold font-editorial text-base text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-bolt mr-2"></i> Electricidad</h3>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Consumo (kWh / mes)</label>
+                            <input type="number" id="sust-elec-kwh" oninput="updateSust('electricidad', 'kwh', parseFloat(this.value)||null)" placeholder="Ej. 12000" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Costo Mensual (MXN)</label>
+                            <input type="number" id="sust-elec-costo" oninput="updateSust('electricidad', 'costo', parseFloat(this.value)||null)" placeholder="Ej. 42000" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
+                        <h3 class="font-bold font-editorial text-base text-blue-600 dark:text-blue-400"><i class="fa-solid fa-droplet mr-2"></i> Agua</h3>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Consumo (m³ / mes)</label>
+                            <input type="number" id="sust-agua-m3" oninput="updateSust('agua', 'm3', parseFloat(this.value)||null)" placeholder="Ej. 150" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">% Reutilizado / Tratado</label>
+                            <input type="number" id="sust-agua-reutilizado" oninput="updateSust('agua', 'reutilizado_pct', parseFloat(this.value)||null)" placeholder="Ej. 25" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
+                        <h3 class="font-bold font-editorial text-base text-amber-600 dark:text-amber-400"><i class="fa-solid fa-truck mr-2"></i> Transporte & Logística</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Litros Combustible</label>
+                                <input type="number" id="sust-trans-litros" oninput="updateSust('transporte', 'litros', parseFloat(this.value)||null)" placeholder="Ej. 1200" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Kilómetros / mes</label>
+                                <input type="number" id="sust-trans-km" oninput="updateSust('transporte', 'km', parseFloat(this.value)||null)" placeholder="Ej. 8500" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">% Viajes Vacíos (Retornos)</label>
+                            <input type="number" id="sust-trans-vacios" oninput="updateSust('transporte', 'vacios_pct', parseFloat(this.value)||null)" placeholder="Ej. 40" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
+                        <h3 class="font-bold font-editorial text-base text-purple-600 dark:text-purple-400"><i class="fa-solid fa-recycle mr-2"></i> Residuos & Gas</h3>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Costo Gas / Combustible (MXN)</label>
+                            <input type="number" id="sust-gas-costo" oninput="updateSust('gas_combustible', 'costo', parseFloat(this.value)||null)" placeholder="Ej. 18000" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">% Residuos Reciclados</label>
+                            <input type="number" id="sust-residuos-rec" oninput="updateResiduosReciclado(parseFloat(this.value)||null)" placeholder="Ej. 85" class="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="calcularResultados(); nextStep()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center space-x-2">
+                        <span>Calcular Resultados & Hallazgos</span>
+                        <i class="fa-solid fa-chart-line"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 7: RESULTADOS & HALLAZGOS -->
+        <section id="step-7" class="wizard-pane space-y-8 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 dark:border-slate-800 pb-6 mb-8 gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 7 de 8</span>
+                        <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Diagnóstico General PRISMA</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Puntajes calculados, cifras financieras clave y hallazgos automáticos con doble capa (simple y técnica).</p>
+                    </div>
+                    <div class="flex items-center space-x-4 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <div class="text-center">
+                            <span class="block text-xs font-semibold uppercase text-slate-500">Puntaje Global</span>
+                            <span id="score-global-val" class="text-3xl font-bold font-editorial text-blue-600 dark:text-blue-400">0</span><span class="text-xl font-bold text-slate-400">/100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts & Area Scores -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <h3 class="font-bold font-editorial text-lg mb-4">Desempeño por Área</h3>
+                        <div id="areas-scores-list" class="space-y-3">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center">
+                        <h3 class="font-bold font-editorial text-lg mb-4 w-full text-left">Radar de Capacidades</h3>
+                        <div class="w-full h-64 flex items-center justify-center">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cifras Calculadas -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold font-editorial mb-4">Cifras Financieras Calculadas</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="cifras-calculadas-container">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Hallazgos Automáticos -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold font-editorial mb-4">Hallazgos Automáticos e Inteligencia PRISMA</h3>
+                    <div id="hallazgos-container" class="space-y-4">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="nextStep()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center space-x-2">
+                        <span>Siguiente: Archivo PRISMA (Exportar/Importar)</span>
+                        <i class="fa-solid fa-file-export"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 8: ARCHIVO PRISMA -->
+        <section id="step-8" class="wizard-pane space-y-6 hidden fade-in">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="max-w-2xl mb-8">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Paso 8 de 8</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-editorial mt-1">Archivo PRISMA 1.2</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Exporta tu diagnóstico en formato JSON estándar para consumirlo en PRISMA Lab, cópialo al portapapeles o importa un archivo previo.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div onclick="descargarArchivoPrisma()" class="p-6 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 hover:bg-blue-100/50 cursor-pointer transition flex flex-col items-center text-center group">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition shadow-lg shadow-blue-600/30">
+                            <i class="fa-solid fa-download"></i>
+                        </div>
+                        <h3 class="font-bold font-editorial text-lg text-blue-900 dark:text-blue-200">Descargar .JSON</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Guarda el Archivo PRISMA compatible con el ecosistema Lab.</p>
+                    </div>
+
+                    <div onclick="copiarJsonClipboard()" class="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 hover:bg-emerald-100/50 cursor-pointer transition flex flex-col items-center text-center group">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition shadow-lg shadow-emerald-600/30">
+                            <i class="fa-solid fa-copy"></i>
+                        </div>
+                        <h3 class="font-bold font-editorial text-lg text-emerald-900 dark:text-emerald-200">Copiar Código</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Copia todo el esquema JSON directamente al portapapeles.</p>
+                    </div>
+
+                    <div onclick="document.getElementById('import-file').click()" class="p-6 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 hover:bg-purple-100/50 cursor-pointer transition flex flex-col items-center text-center group">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition shadow-lg shadow-purple-600/30">
+                            <i class="fa-solid fa-upload"></i>
+                        </div>
+                        <h3 class="font-bold font-editorial text-lg text-purple-900 dark:text-purple-200">Importar Archivo</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sube un archivo .json previo para reanudar o editar.</p>
+                        <input type="file" id="import-file" accept=".json" onchange="importarArchivoPrisma(event)" class="hidden">
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Vista Previa del Archivo PRISMA 1.2 (JSON)</h3>
+                        <span class="text-xs text-slate-400">Esquema exacto verificado</span>
+                    </div>
+                    <div class="relative">
+                        <textarea id="json-preview-area" readonly rows="12" class="w-full p-4 rounded-xl bg-slate-900 text-emerald-400 font-mono text-xs border border-slate-800 outline-none resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold rounded-xl text-sm transition">
+                        Anterior
+                    </button>
+                    <button onclick="goToStep(1)" class="px-6 py-3 bg-slate-900 dark:bg-slate-800 text-white font-semibold rounded-xl text-sm transition">
+                        Reiniciar Diagnóstico
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Notification Snackbar -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm font-medium">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">Notificación PRISMA</span>
+    </div>
+
+    <script>
+        // State Management for PRISMA Diagnóstico 1.2
+        let currentStep = 1;
+        let radarChartInstance = null;
+
+        let prismaData = {
+            "formato": "Archivo PRISMA",
+            "version": "1.2",
+            "empresa": {
+                "nombre": "",
+                "giro": "",
+                "ubicacion": "",
+                "antiguedad": "",
+                "empleados": null,
+                "producto_principal": "",
+                "objetivo_actual": ""
+            },
+            "areas": {
+                "Finanzas": [],
+                "Marketing y ventas": [],
+                "Operaciones": [],
+                "Digitalización": [],
+                "Eficiencia y sostenibilidad": [],
+                "Distribución y expansión": []
+            },
+            "analisis": {
+                "cifras": {
+                    "ventas_mensuales": null,
+                    "costos_variables": null,
+                    "gastos_fijos": null,
+                    "utilidad_declarada": null,
+                    "deuda_total": null,
+                    "liquidez_disponible": null
+                },
+                "hallazgos": [],
+                "metas": {}
+            },
+            "objetivos": { "metas": {} },
+            "comercial": {
+                "metricas": [],
+                "estrategias": []
+            },
+            "com": {
+                "clientes": null,
+                "ticket": null,
+                "rec": null,
+                "nuevos": null,
+                "canal": null,
+                "inter": null,
+                "linea": null,
+                "top1": null,
+                "top3": null,
+                "ocio": null
+            },
+            "lab_pd": {
+                "dias": null,
+                "procesadas": null,
+                "merma": null,
+                "mermaAnt": null,
+                "precio": null,
+                "horasPlan": null,
+                "horasParo": null,
+                "velIdeal": null,
+                "costos": {
+                    "materia": null, "manoObra": null, "energia": null,
+                    "mantenimiento": null, "depreciacion": null, "otros": null
+                },
+                "inv": { "stock": null, "min": null, "max": null, "consumo": null },
+                "procesos": [
+                    { "nombre": "Corrugado y Corte", "cap": 800, "trab": 8, "maq": 3 },
+                    { "nombre": "Impresión Flexográfica", "cap": 650, "trab": 5, "maq": 2 },
+                    { "nombre": "Armado y Pegado", "cap": 500, "trab": 12, "maq": 4 }
+                ]
+            },
+            "productos": [
+                {
+                    "nombre": "Caja Regular Ranurada RSC", "precio": 35.50, "unidades": 8500,
+                    "materia": 14.00, "insumos": 2.50, "mano": 4.00,
+                    "energia": 1.20, "empaque": 0.80, "indirectos": 1.50, "merma": 0.50
+                }
+            ],
+            "gastos_fijos_detalle": {
+                "renta": null, "sueldos_administrativos": null, "internet": null,
+                "telefono": null, "software": null, "contabilidad": null,
+                "seguros": null, "seguridad": null, "limpieza": null,
+                "servicios": null, "publicidad": null, "mantenimiento_general": null,
+                "desgaste_equipo": null, "gastos_bancarios": null, "otros": null
+            },
+            "growth": {
+                "embudo": {
+                    "prospectos": null, "contactados": null, "cotizaciones": null,
+                    "negociaciones": null, "ventas_cerradas": null, "dias_cierre": null
+                },
+                "canales": [
+                    { "nombre": "Venta Directa B2B", "inversion": 15000, "prospectos": 120, "clientes": 8, "ingresos": 600000 },
+                    { "nombre": "Canales Digitales", "inversion": 8000, "prospectos": 180, "clientes": 4, "ingresos": 250000 }
+                ]
+            },
+            "digital": {
+                "administracion": { "level": null },
+                "ventas": { "level": null },
+                "produccion": { "level": null },
+                "inventarios": { "level": null },
+                "comunicacion": { "level": null },
+                "guardar_informacion": { "level": null },
+                "seguridad": { "level": null },
+                "tareas_automaticas": { "level": null },
+                "horas": {
+                    "administracion": null, "ventas": null, "produccion": null,
+                    "inventarios": null, "comunicacion": null, "guardar_informacion": null,
+                    "seguridad": null, "tareas_automaticas": null
+                }
+            },
+            "sostenibilidad": {
+                "electricidad": { "kwh": null, "costo": null, "meta_kwh_unidad": null },
+                "gas_combustible": { "costo": null },
+                "agua": { "m3": null, "costo": null, "reutilizado_pct": null },
+                "transporte": {
+                    "litros": null, "km": null, "viajes": null,
+                    "vacios_pct": null, "factor_co2e": null
+                },
+                "residuos": [
+                    { "cantidad": 1200, "costo": 3500, "reciclado_pct": 85, "reutilizado_pct": 10 }
+                ]
+            }
+        };
+
+        // Initialize UI Elements & Dynamic Forms on Load
+        window.onload = function() {
+            initGastosFijosForm();
+            initLabCostosForm();
+            initDigitalForm();
+            renderProductosList();
+            cargarLocalStorage();
+            updateWizardView();
+        };
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = "fa-solid fa-moon";
+                localStorage.setItem('prisma_theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.className = "fa-solid fa-sun";
+                localStorage.setItem('prisma_theme', 'dark');
+            }
+        }
+
+        if (localStorage.getItem('prisma_theme') === 'dark' || (!localStorage.getItem('prisma_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').className = "fa-solid fa-sun";
+        }
+
+        // Stepper Navigation
+        function goToStep(step) {
+            currentStep = step;
+            updateWizardView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextStep() {
+            if (currentStep < 8) {
+                currentStep++;
+                if (currentStep === 7) calcularResultados();
+                if (currentStep === 8) actualizarJsonPreview();
+                updateWizardView();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                guardarLocalStorage();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateWizardView();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function updateWizardView() {
+            document.querySelectorAll('.wizard-pane').forEach((pane, idx) => {
+                if ((idx + 1) === currentStep) {
+                    pane.classList.remove('hidden');
+                } else {
+                    pane.classList.add('hidden');
+                }
+            });
+
+            document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+                const stepNum = idx + 1;
+                const circle = btn.querySelector('span:first-child');
+                if (stepNum === currentStep) {
+                    btn.classList.add('text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-950/50');
+                    circle.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                    circle.classList.add('bg-blue-600', 'text-white');
+                } else if (stepNum < currentStep) {
+                    btn.classList.remove('text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-950/50');
+                    circle.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs";
+                } else {
+                    btn.classList.remove('text-blue-600', 'dark:text-blue-400', 'bg-blue-50', 'dark:bg-blue-950/50');
+                    circle.className = "w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400";
+                }
+            });
+        }
+
+        // Data Updaters
+        function updateEmpresa(key, val) { prismaData.empresa[key] = val; }
+        function updateCifra(key, val) { prismaData.analisis.cifras[key] = val; }
+        function updateCom(key, val) { prismaData.com[key] = val; }
+        function updateEmbudo(key, val) { prismaData.growth.embudo[key] = val; }
+        function updateLabPd(key, val) { prismaData.lab_pd[key] = val; }
+
+        // Dynamic Gastos Fijos Form
+        const gfLabels = {
+            "renta": "Renta de Local / Planta", "sueldos_administrativos": "Sueldos Administrativos",
+            "internet": "Internet y Redes", "telefono": "Telefonía Móvil y Fija",
+            "software": "Suscripciones Software / ERP", "contabilidad": "Contabilidad y Legal",
+            "seguros": "Seguros de Negocio", "seguridad": "Seguridad y Vigilancia",
+            "limpieza": "Limpieza y Mantenimiento", "servicios": "Luz, Agua y Servicios",
+            "publicidad": "Publicidad y Marketing Fijo", "mantenimiento_general": "Mantenimiento General",
+            "desgaste_equipo": "Depreciación / Desgaste", "gastos_bancarios": "Comisiones Bancarias", "otros": "Otros Gastos Fijos"
+        };
+
+        function initGastosFijosForm() {
+            const container = document.getElementById('gastos-fijos-container');
+            container.innerHTML = '';
+            for (let key in gfLabels) {
+                container.innerHTML += `
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">${gfLabels[key]}</label>
+                        <input type="number" oninput="updateGastoFijo('${key}', parseFloat(this.value)||null)" placeholder="0.00" value="${prismaData.gastos_fijos_detalle[key]||''}" class="gf-input w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                `;
+            }
+        }
+
+        function updateGastoFijo(key, val) {
+            prismaData.gastos_fijos_detalle[key] = val;
+            let suma = 0;
+            for (let k in prismaData.gastos_fijos_detalle) {
+                suma += (prismaData.gastos_fijos_detalle[k] || 0);
+            }
+            prismaData.analisis.cifras.gastos_fijos = suma;
+            document.getElementById('fin-fijos').value = suma || '';
+        }
+
+        // Lab Costos Form
+        const labCostosLabels = {
+            "materia": "Materia Prima", "manoObra": "Mano de Obra Directa", "energia": "Energía de Producción",
+            "mantenimiento": "Mantenimiento Maquinaria", "depreciacion": "Depreciación Industrial", "otros": "Otros Costos Fabriles"
+        };
+
+        function initLabCostosForm() {
+            const container = document.getElementById('lab-costos-container');
+            container.innerHTML = '';
+            for (let key in labCostosLabels) {
+                container.innerHTML += `
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">${labCostosLabels[key]}</label>
+                        <input type="number" oninput="updateLabCosto('${key}', parseFloat(this.value)||null)" placeholder="0.00" class="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    </div>
+                `;
+            }
+        }
+
+        function updateLabCosto(key, val) {
+            prismaData.lab_pd.costos[key] = val;
+        }
+
+        // Digital Form
+        const digitalAreas = [
+            { key: "administracion", name: "Administración y Contabilidad" },
+            { key: "ventas", name: "Ventas y CRM" },
+            { key: "produccion", name: "Producción y Operaciones" },
+            { key: "inventarios", name: "Control de Inventarios" },
+            { key: "comunicacion", name: "Comunicación Interna" },
+            { key: "guardar_informacion", name: "Archivo y Nube (Storage)" },
+            { key: "seguridad", name: "Ciberseguridad y Backups" },
+            { key: "tareas_automaticas", name: "Automatización de Tareas" }
+        ];
+
+        function initDigitalForm() {
+            const container = document.getElementById('digital-areas-container');
+            container.innerHTML = '';
+            digitalAreas.forEach(area => {
+                container.innerHTML += `
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="font-semibold text-sm">${area.name}</div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1">Nivel Digital (1 al 5)</label>
+                            <input type="number" min="1" max="5" oninput="updateDigitalLevel('${area.key}', parseInt(this.value)||null)" placeholder="Ej. 3" class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1">Horas Manuales / Mes</label>
+                            <input type="number" oninput="updateDigitalHoras('${area.key}', parseFloat(this.value)||null)" placeholder="Ej. 40" class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateDigitalLevel(key, val) { prismaData.digital[key].level = val; }
+        function updateDigitalHoras(key, val) { prismaData.digital.horas[key] = val; }
+
+        function updateSust(cat, key, val) {
+            prismaData.sostenibilidad[cat][key] = val;
+        }
+
+        function updateResiduosReciclado(val) {
+            if (prismaData.sostenibilidad.residuos.length > 0) {
+                prismaData.sostenibilidad.residuos[0].reciclado_pct = val;
+            }
+        }
+
+        // Productos List Management
+        function renderProductosList() {
+            const container = document.getElementById('productos-list');
+            container.innerHTML = '';
+            prismaData.productos.forEach((prod, idx) => {
+                container.innerHTML += `
+                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold uppercase text-blue-600">Producto #${idx + 1}</span>
+                            <button onclick="removeProductRow(${idx})" class="text-rose-500 hover:text-rose-700 text-xs font-semibold"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="text" value="${prod.nombre}" oninput="updateProducto(${idx}, 'nombre', this.value)" placeholder="Nombre del producto" class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                            <input type="number" value="${prod.precio||''}" oninput="updateProducto(${idx}, 'precio', parseFloat(this.value)||null)" placeholder="Precio venta (MXN)" class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                            <input type="number" value="${prod.unidades||''}" oninput="updateProducto(${idx}, 'unidades', parseInt(this.value)||null)" placeholder="Unidades vendidas/mes" class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addProductRow() {
+            prismaData.productos.push({
+                nombre: "", precio: null, unidades: null,
+                materia: null, insumos: null, mano: null,
+                energia: null, empaque: null, indirectos: null, merma: null
+            });
+            renderProductosList();
+        }
+
+        function removeProductRow(idx) {
+            prismaData.productos.splice(idx, 1);
+            renderProductosList();
+        }
+
+        function updateProducto(idx, key, val) {
+            prismaData.productos[idx][key] = val;
+        }
+
+        // Calculation & Automated Findings Engine
+        function calcularResultados() {
+            const cifras = prismaData.analisis.cifras;
+            const ventas = cifras.ventas_mensuales || 0;
+            const variables = cifras.costos_variables || 0;
+            const fijos = cifras.gastos_fijos || 0;
+            
+            const utilidadCalc = ventas - variables - fijos;
+            const margenUtilidad = ventas > 0 ? (utilidadCalc / ventas) * 100 : 0;
+            const puntoEquilibrio = (ventas - variables) > 0 ? fijos / (1 - (variables / ventas)) : 0;
+
+            // Render Cifras Calculadas
+            const cifrasContainer = document.getElementById('cifras-calculadas-container');
+            cifrasContainer.innerHTML = `
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span class="block text-xs uppercase text-slate-500 font-semibold">Utilidad Neta Est.</span>
+                    <span class="text-xl font-bold font-editorial text-emerald-600 mt-1 block">$${utilidadCalc.toLocaleString('es-MX', {maximumFractionDigits:2})}</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span class="block text-xs uppercase text-slate-500 font-semibold">Margen Utilidad</span>
+                    <span class="text-xl font-bold font-editorial text-blue-600 mt-1 block">${margenUtilidad.toFixed(1)}%</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span class="block text-xs uppercase text-slate-500 font-semibold">Punto de Equilibrio</span>
+                    <span class="text-xl font-bold font-editorial text-purple-600 mt-1 block">$${puntoEquilibrio.toLocaleString('es-MX', {maximumFractionDigits:0})}</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span class="block text-xs uppercase text-slate-500 font-semibold">Costo Total Operativo</span>
+                    <span class="text-xl font-bold font-editorial text-amber-600 mt-1 block">$${(variables + fijos).toLocaleString('es-MX', {maximumFractionDigits:0})}</span>
+                </div>
+            `;
+
+            // Automated Findings Generation
+            let hallazgos = [];
+            let scoresAreas = { "Finanzas": 80, "Marketing y ventas": 75, "Operaciones": 70, "Digitalización": 60, "Eficiencia y sostenibilidad": 65, "Distribución y expansión": 70 };
+
+            if (ventas > 0 && ((variables + fijos) / ventas) > 0.85) {
+                hallazgos.push({
+                    codigo: "FIN-01",
+                    area: "Finanzas",
+                    nivel: "alerta",
+                    titulo_simple: "Costos operativos y variables muy elevados",
+                    titulo_tecnico: "Margen de contribución comprometido por alta estructura de costos (>85%)",
+                    lectura_simple: "Tus costos y gastos consumen más del 85% de lo que vendes, dejando poco margen para imprevistos o crecimiento.",
+                    lectura_tecnica: "La relación (CV + CF) / Ventas supera el umbral crítico de eficiencia, erosionando el EBITDA proyectado."
+                });
+                scoresAreas["Finanzas"] = 45;
+            }
+
+            if (prismaData.com.top1 && prismaData.com.top1 >= 40) {
+                hallazgos.push({
+                    codigo: "COM-01",
+                    area: "Marketing y ventas",
+                    nivel: "alerta",
+                    titulo_simple: "Alta dependencia de tu cliente principal",
+                    titulo_tecnico: "Concentración de cartera de clientes superior al 40% (Top 1)",
+                    lectura_simple: "Dependes demasiado de un solo cliente. Si ese cliente reduce sus compras, tu negocio sufrirá un impacto severo.",
+                    lectura_tecnica: "Riesgo de concentración de ingresos elevado. Se recomienda diversificar canales comerciales."
+                });
+                scoresAreas["Marketing y ventas"] = 50;
+            }
+
+            if (prismaData.lab_pd.merma && prismaData.lab_pd.merma > 5) {
+                hallazgos.push({
+                    codigo: "OPS-01",
+                    area: "Operaciones",
+                    nivel: "atencion",
+                    titulo_simple: "Porcentaje de merma superior al promedio ideal",
+                    titulo_tecnico: "Indicador de desperdicio industrial fuera de norma (>5%)",
+                    lectura_simple: "Estás desperdiciando material por encima del 5%, lo que reduce directamente tus ganancias en planta.",
+                    lectura_tecnica: "Ineficiencia en el proceso de transformación con impacto directo en el costo unitario de producción."
+                });
+                scoresAreas["Operaciones"] = 55;
+            }
+
+            let digitalLevels = Object.values(prismaData.digital).filter(v => v && typeof v.level === 'number').map(v => v.level);
+            let avgDigital = digitalLevels.length > 0 ? digitalLevels.reduce((a,b)=>a+b,0) / digitalLevels.length : 3;
+            if (avgDigital < 2.5) {
+                hallazgos.push({
+                    codigo: "DIG-01",
+                    area: "Digitalización",
+                    nivel: "atencion",
+                    titulo_simple: "Madurez digital baja en procesos clave",
+                    titulo_tecnico: "Índice de digitalización inferior a 2.5/5.0 con alta carga de horas manuales",
+                    lectura_simple: "Tus procesos dependen de muchas horas manuales y falta automatización digital para escalar con eficiencia.",
+                    lectura_tecnica: "Bajo nivel de adopción tecnológica (ERP/CRM/Cloud), incrementando el costo operativo humano."
+                });
+                scoresAreas["Digitalización"] = 40;
+            }
+
+            if (hallazgos.length === 0) {
+                hallazgos.push({
+                    codigo: "OK-01",
+                    area: "General",
+                    nivel: "ok",
+                    titulo_simple: "Operación general estable y saludable",
+                    titulo_tecnico: "Indicadores clave dentro de parámetros operativos estándar",
+                    lectura_simple: "Tus indicadores muestran un equilibrio adecuado entre ventas, costos y operación. ¡Excelente trabajo!",
+                    lectura_tecnica: "Salud financiera y operativa óptima conforme a los umbrales del modelo PRISMA 1.2."
+                });
+            }
+
+            prismaData.analisis.hallazgos = hallazgos;
+
+            // Render Hallazgos
+            const hallazgosContainer = document.getElementById('hallazgos-container');
+            hallazgosContainer.innerHTML = '';
+            hallazgos.forEach(h => {
+                let badgeColor = h.nivel === 'alerta' ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900' : (h.nivel === 'atencion' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900');
+                hallazgosContainer.innerHTML += `
+                    <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${badgeColor}">${h.nivel} · ${h.area}</span>
+                            <span class="text-xs font-mono text-slate-400">${h.codigo}</span>
+                        </div>
+                        <h4 class="font-bold font-editorial text-lg">${h.titulo_simple}</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-300">${h.lectura_simple}</p>
+                        <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-500 font-mono">
+                            <strong>Técnico:</strong> ${h.lectura_tecnica}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Render Area Scores & Global Score
+            let scoreGlobal = Math.round(Object.values(scoresAreas).reduce((a,b)=>a+b,0) / Object.values(scoresAreas).length);
+            document.getElementById('score-global-val').innerText = scoreGlobal;
+
+            const areasList = document.getElementById('areas-scores-list');
+            areasList.innerHTML = '';
+            for (let area in scoresAreas) {
+                let sc = scoresAreas[area];
+                areasList.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span>${area}</span>
+                            <span>${sc}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${sc}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Render Radar Chart
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if (radarChartInstance) radarChartInstance.destroy();
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(scoresAreas),
+                    datasets: [{
+                        label: 'Puntaje por Área',
+                        data: Object.values(scoresAreas),
+                        backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                        borderColor: '#2563eb',
+                        pointBackgroundColor: '#2563eb',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Archivo PRISMA JSON Management
+        function actualizarJsonPreview() {
+            document.getElementById('json-preview-area').value = JSON.stringify(prismaData, null, 2);
+        }
+
+        function descargarArchivoPrisma() {
+            actualizarJsonPreview();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(prismaData, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `Archivo_PRISMA_${prismaData.empresa.nombre || 'Empresa'}_v1.2.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            mostrarToast("Archivo PRISMA descargado con éxito", "fa-circle-check");
+        }
+
+        function copiarJsonClipboard() {
+            actualizarJsonPreview();
+            const jsonText = JSON.stringify(prismaData, null, 2);
+            const textarea = document.createElement('textarea');
+            textarea.value = jsonText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                mostrarToast("JSON copiado al portapapeles", "fa-clipboard-check");
+            } catch (err) {
+                mostrarToast("Error al copiar al portapapeles", "fa-circle-exclamation");
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function importarArchivoPrisma(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.formato === "Archivo PRISMA") {
+                        prismaData = parsed;
+                        poblarFormulariosDesdeEstado();
+                        mostrarToast("Archivo PRISMA importado correctamente", "fa-cloud-arrow-down");
+                        goToStep(1);
+                    } else {
+                        mostrarToast("El archivo no es un Archivo PRISMA válido", "fa-triangle-exclamation");
+                    }
+                } catch (err) {
+                    mostrarToast("Error al leer el archivo JSON", "fa-triangle-exclamation");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // LocalStorage Sync
+        function guardarLocalStorage() {
+            localStorage.setItem('prisma_diag_12', JSON.stringify(prismaData));
+            const status = document.getElementById('save-status');
+            status.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-emerald-500 rounded-full"></span> Guardado`;
+        }
+
+        function cargarLocalStorage() {
+            const saved = localStorage.getItem('prisma_diag_12');
+            if (saved) {
+                try {
+                    prismaData = JSON.parse(saved);
+                    poblarFormulariosDesdeEstado();
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        function poblarFormulariosDesdeEstado() {
+            document.getElementById('emp-nombre').value = prismaData.empresa.nombre || '';
+            document.getElementById('emp-giro').value = prismaData.empresa.giro || '';
+            document.getElementById('emp-ubicacion').value = prismaData.empresa.ubicacion || '';
+            document.getElementById('emp-antiguedad').value = prismaData.empresa.antiguedad || '';
+            document.getElementById('emp-empleados').value = prismaData.empresa.empleados || '';
+            document.getElementById('emp-producto_principal').value = prismaData.empresa.producto_principal || '';
+            document.getElementById('emp-objetivo_actual').value = prismaData.empresa.objetivo_actual || '';
+
+            document.getElementById('fin-ventas').value = prismaData.analisis.cifras.ventas_mensuales || '';
+            document.getElementById('fin-variables').value = prismaData.analisis.cifras.costos_variables || '';
+            document.getElementById('fin-fijos').value = prismaData.analisis.cifras.gastos_fijos || '';
+            document.getElementById('fin-utilidad').value = prismaData.analisis.cifras.utilidad_declarada || '';
+            document.getElementById('fin-deuda').value = prismaData.analisis.cifras.deuda_total || '';
+            document.getElementById('fin-liquidez').value = prismaData.analisis.cifras.liquidez_disponible || '';
+
+            initGastosFijosForm();
+            renderProductosList();
+        }
+
+        // Demo Cartonera Loader
+        function cargarDemo() {
+            prismaData = {
+                "formato": "Archivo PRISMA",
+                "version": "1.2",
+                "empresa": {
+                    "nombre": "Cartonera del Bajío S.A. de C.V.",
+                    "giro": "Fabricación de empaques de cartón corrugado",
+                    "ubicacion": "León, Guanajuato",
+                    "antiguedad": "10 años",
+                    "empleados": 42,
+                    "producto_principal": "Cajas RSC impresas a dos tintas",
+                    "objetivo_actual": "Reducir merma industrial y automatizar control de inventarios"
+                },
+                "areas": {
+                    "Finanzas": [], "Marketing y ventas": [], "Operaciones": [],
+                    "Digitalización": [], "Eficiencia y sostenibilidad": [], "Distribución y expansión": []
+                },
+                "analisis": {
+                    "cifras": {
+                        "ventas_mensuales": 1850000,
+                        "costos_variables": 1100000,
+                        "gastos_fijos": 450000,
+                        "utilidad_declarada": 300000,
+                        "deuda_total": 650000,
+                        "liquidez_disponible": 240000
+                    },
+                    "hallazgos": [],
+                    "metas": {}
+                },
+                "objetivos": { "metas": {} },
+                "comercial": { "metricas": [], "estrategias": [] },
+                "com": {
+                    "clientes": 85, "ticket": 21764, "rec": 75, "nuevos": 8,
+                    "canal": "Venta Directa B2B", "inter": 15, "linea": null,
+                    "top1": 45, "top3": 70, "ocio": 20
+                },
+                "lab_pd": {
+                    "dias": 24, "procesadas": 18000, "merma": 6.2, "mermaAnt": 8.5,
+                    "precio": 102.77, "horasPlan": 192, "horasParo": 22, "velIdeal": 95,
+                    "costos": { "materia": 650000, "manoObra": 250000, "energia": 85000, "mantenimiento": 45000, "depreciacion": 40000, "otros": 30000 },
+                    "inv": { "stock": 4500, "min": 2000, "max": 6000, "consumo": 15000 },
+                    "procesos": [
+                        { "nombre": "Corrugado y Corte", "cap": 900, "trab": 10, "maq": 3 },
+                        { "nombre": "Impresión Flexográfica", "cap": 750, "trab": 6, "maq": 2 },
+                        { "nombre": "Armado y Pegado", "cap": 600, "trab": 14, "maq": 4 }
+                    ]
+                },
+                "productos": [
+                    { "nombre": "Caja RSC Estándar", "precio": 38.50, "unidades": 12000, "materia": 15.00, "insumos": 2.00, "mano": 4.50, "energia": 1.50, "empaque": 0.80, "indirectos": 1.20, "merma": 0.50 }
+                ],
+                "gastos_fijos_detalle": {
+                    "renta": 85000, "sueldos_administrativos": 180000, "internet": 4500, "telefono": 6000,
+                    "software": 12000, "contabilidad": 15000, "seguros": 22000, "seguridad": 18000,
+                    "limpieza": 10000, "servicios": 35000, "publicidad": 8000, "mantenimiento_general": 25000,
+                    "desgaste_equipo": 20000, "gastos_bancarios": 4500, "otros": 5000
+                },
+                "growth": {
+                    "embudo": { "prospectos": 250, "contactados": 180, "cotizaciones": 65, "negociaciones": 25, "ventas_cerradas": 8, "dias_cierre": 18 },
+                    "canales": [{ "nombre": "Venta Directa", "inversion": 12000, "prospectos": 250, "clientes": 8, "ingresos": 1850000 }]
+                },
+                "digital": {
+                    "administracion": { "level": 3 }, "ventas": { "level": 2 }, "produccion": { "level": 2 },
+                    "inventarios": { "level": 2 }, "comunicacion": { "level": 4 }, "guardar_informacion": { "level": 3 },
+                    "seguridad": { "level": 2 }, "tareas_automaticas": { "level": 1 },
+                    "horas": { "administracion": 45, "ventas": 60, "produccion": 80, "inventarios": 50, "comunicacion": 20, "guardar_informacion": 30, "seguridad": 15, "tareas_automaticas": 70 }
+                },
+                "sostenibilidad": {
+                    "electricidad": { "kwh": 14500, "costo": 85000, "meta_kwh_unidad": 0.75 },
+                    "gas_combustible": { "costo": 22000 },
+                    "agua": { "m3": 180, "costo": 9500, "reutilizado_pct": 30 },
+                    "transporte": { "litros": 1400, "km": 9200, "viajes": 45, "vacios_pct": 35, "factor_co2e": 2.4 },
+                    "residuos": [{ "cantidad": 1500, "costo": 4200, "reciclado_pct": 90, "reutilizado_pct": 15 }]
+                }
+            };
+            poblarFormulariosDesdeEstado();
+            mostrarToast("Demo 'Cartonera del Bajío' cargado con éxito", "fa-wand-magic-sparkles");
+            goToStep(1);
+        }
+
+        // Toast Notification
+        function mostrarToast(msg, iconClass) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+            toastMsg.innerText = msg;
+            toastIcon.className = `fa-solid ${iconClass} text-emerald-400`;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3500);
+        }
+    </script>
+
+    <script>
+    /* ===== Vida y movimiento (tomado de PRISMA Lab 0.21). Solo agrega efectos: no cambia cálculos ni datos. ===== */
+    (function () {
+        const RM = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* --- el prisma con las piezas del logo --- */
+        const PM_F = [["0b5cad","332,86 365,149 331,207 297,150",0,-1,0,3],["1e90ff","296,153 329,211 291,277 225,277",-1,-0.4,1,5],["f5a623","368,153 437,277 374,277 337,213",1,-0.4,2,5],["38b6ff","292,280 257,341 187,341 222,280",-1,0.7,3,8],["12a8c9","331,215 261,341 402,341 350,246",0,1,4,7],["ffcb47","373,280 441,280 476,341 407,341",1,0.7,5,9]];
+        const PM = (c = '') => '<svg class="pm go ' + c + '" viewBox="180 80 306 266" aria-hidden="true">' + PM_F.map(f => `<polygon class="f" points="${f[1]}" fill="#${f[0]}" style="--dx:${f[2]};--dy:${f[3]};--k:${f[4]};--d:${f[5]}"/>`).join('') + '<g clip-path="url(#pmClip)"><rect class="sheen" x="0" y="70" width="46" height="290" fill="url(#pmSheen)"/></g></svg>';
+
+        document.body.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><clipPath id="pmClip"><polygon points="332,84 482,344 183,344"/></clipPath><linearGradient id="pmSheen" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".65"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>');
+
+        const bm = document.getElementById('brandMark'); if (bm) bm.innerHTML = PM();
+
+        /* --- fondo con luces --- */
+        const fx = document.createElement('div'); fx.className = 'bg-fx'; fx.innerHTML = '<i></i><i></i><i></i>'; document.body.prepend(fx);
+
+        /* --- prisma en cada paso (menos en resultados) --- */
+        document.querySelectorAll('.wizard-pane').forEach(p => {
+            const card = p.firstElementChild; if (card) card.insertAdjacentHTML('afterbegin', '<div class="deco">' + PM() + '</div>');
+        });
+
+        /* --- barra de avance al bajar --- */
+        const sp = document.createElement('div'); sp.className = 'scroll-bar'; document.body.appendChild(sp);
+        const upd = () => { const h = document.documentElement.scrollHeight - innerHeight; sp.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, scrollY / h) : 0) + ')'; };
+        addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); new ResizeObserver(upd).observe(document.body); upd();
+
+        /* --- pie con el lema --- */
+        const foot = document.createElement('footer'); foot.className = 'pm-foot';
+        foot.innerHTML = '<span class="pm-mini">' + PM() + '</span><div class="rail-tag"><span style="--c:#1e90ff;--i:0">Marketing</span><span style="--c:#12a8c9;--i:1">Finanzas</span><span style="--c:#ffcb47;--i:2">Sustentabilidad</span></div>';
+        const mainEl = document.querySelector('main'); if (mainEl) mainEl.insertAdjacentElement('afterend', foot);
+
+        /* --- línea que se desliza bajo los pasos --- */
+        const stepsBox = document.querySelector('nav .flex.min-w-max, nav > div > div');
+        let ind = null;
+        if (stepsBox) { stepsBox.style.position = 'relative'; ind = document.createElement('div'); ind.className = 'step-ind'; stepsBox.appendChild(ind); }
+        function moveInd() {
+            const btn = document.querySelector('.step-btn[data-step="' + currentStep + '"]'); if (!ind || !btn) return;
+            const y = btn.offsetTop + btn.offsetHeight - 3;
+            ind.style.width = btn.offsetWidth + 'px'; ind.style.transform = `translate(${btn.offsetLeft}px,${y}px)`;
+            const nav = btn.closest('nav'); if (nav && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: btn.offsetLeft - nav.clientWidth / 2 + btn.offsetWidth / 2, behavior: RM() ? 'auto' : 'smooth' });
+        }
+        addEventListener('resize', moveInd); if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveInd);
+
+        /* --- números que cuentan --- */
+        function countUp(el, delay) {
+            const t = el.textContent.trim(), m = t.match(/^(\D*?)(\d[\d,]*\.?\d*)([\s\S]*)$/);
+            if (!m || el.children.length) return;
+            const num = m[2], dec = (num.split('.')[1] || '').length, comma = num.includes(','), val = parseFloat(num.replace(/,/g, ''));
+            if (!(val > 0)) return;
+            const fmt = v => { const [i, d] = v.toFixed(dec).split('.'); return (comma ? i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : i) + (d ? '.' + d : ''); };
+            let last = m[1] + fmt(0) + m[3]; el.textContent = last;
+            const t0 = performance.now() + delay;
+            const step = now => {
+                if (el.textContent !== last) return;
+                const p = Math.min(1, Math.max(0, (now - t0) / 900));
+                last = p >= 1 ? t : m[1] + fmt(val * (1 - Math.pow(1 - p, 3))) + m[3]; el.textContent = last;
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+        function splitTitle(h) {
+            const t = h.textContent.trim(); h.setAttribute('aria-label', t);
+            h.innerHTML = t.split(/\s+/).map((w, i) => `<span class="w" aria-hidden="true"><i style="--k:${i}">${w}</i></span> `).join('');
+        }
+
+        /* --- animación de la pantalla que se ve --- */
+        let io = null;
+        function animarPagina() {
+            if (RM()) return;
+            if (io) io.disconnect();
+            const pane = document.querySelector('.wizard-pane:not(.hidden)'); if (!pane) return;
+            const main = pane.firstElementChild, blocks = [];
+            pane.querySelectorAll('h2').forEach(h => { if (!h.children.length) splitTitle(h); });
+            pane.querySelectorAll('.max-w-2xl > span, .max-w-2xl > p').forEach(x => blocks.push(x));
+            const cand = [...pane.querySelectorAll('div.rounded-2xl, div.rounded-xl, .grid > div')].filter(x => x.parentElement !== pane && x !== main && !x.classList.contains('deco'));
+            const set = new Set(cand);
+            cand.filter(x => { let p = x.parentElement; while (p && p !== main) { if (set.has(p)) return false; p = p.parentElement; } return true; })
+                .forEach(x => { if (x.classList.contains('border')) x.classList.add('fx-card'); blocks.push(x); });
+            io = new IntersectionObserver(es => es.forEach(en => {
+                if (!en.isIntersecting) return;
+                const el = en.target; io.unobserve(el); el.classList.add('in');
+                setTimeout(() => { el.classList.remove('rv', 'in'); el.style.removeProperty('--d'); }, 1700);
+            }), { threshold: 0.06 });
+            let n = 0;
+            blocks.forEach(el => {
+                if (!el.getClientRects().length) return;
+                el.classList.remove('in'); el.classList.add('rv');
+                el.style.setProperty('--d', (el.getBoundingClientRect().top < innerHeight ? Math.min(n++, 9) * 70 : 0) + 'ms');
+                io.observe(el);
+            });
+            pane.querySelectorAll('.pm').forEach(m => { m.classList.remove('go'); void m.getBoundingClientRect(); m.classList.add('go'); });
+            pane.querySelectorAll('#score-global-val, #cifras-calculadas-container .font-editorial, #areas-scores-list .justify-between span:last-child').forEach((el, i) => countUp(el, Math.min(i, 8) * 70 + 250));
+            pane.querySelectorAll('#areas-scores-list .bg-blue-600').forEach(el => { el.classList.add('grow-x'); setTimeout(() => el.classList.remove('grow-x'), 1600); });
+            pane.querySelectorAll('#cifras-calculadas-container > div').forEach(el => el.classList.add('tilt'));
+            if (pane.id === 'step-7' && typeof radarChartInstance !== 'undefined' && radarChartInstance) { try { radarChartInstance.resize(); radarChartInstance.reset(); radarChartInstance.update(); } catch (e) {} }
+        }
+
+        /* --- transición entre pasos (sale uno, entra el otro) --- */
+        const original = window.updateWizardView;
+        let first = true, busy = false, pending = false;
+        function despues() {
+            moveInd();
+            if (ind) requestAnimationFrame(() => requestAnimationFrame(() => ind.classList.add('ready')));
+            const b = document.querySelector('.step-btn[data-step="' + currentStep + '"] span:first-child');
+            if (b && !RM()) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+            if (!document.getElementById('pmSplash')) animarPagina();
+        }
+        window.updateWizardView = function () {
+            const cur = document.querySelector('.wizard-pane:not(.hidden)'), next = document.getElementById('step-' + currentStep);
+            if (first || !cur || cur === next || RM()) { first = false; original(); despues(); return; }
+            if (busy) { pending = true; return; }
+            busy = true; cur.classList.add('leaving');
+            setTimeout(() => {
+                cur.classList.remove('leaving'); original(); despues(); busy = false;
+                if (pending) { pending = false; window.updateWizardView(); }
+            }, 190);
+        };
+
+        /* --- luz del cursor, inclinación de cifras y movimiento del prisma --- */
+        document.addEventListener('mousemove', e => {
+            const t = e.target.closest ? e.target : null; if (!t) return;
+            const c = t.closest('.fx-card');
+            if (c) { const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px'); }
+        }, { passive: true });
+        if (!RM()) {
+            const root = document.documentElement; let raf = 0, mx = 0, my = 0;
+            document.addEventListener('mousemove', e => {
+                mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5;
+                if (!raf) raf = requestAnimationFrame(() => { raf = 0; root.style.setProperty('--px', (mx * 2).toFixed(3)); root.style.setProperty('--py', (my * 2).toFixed(3)); });
+                const c = e.target.closest && e.target.closest('.tilt'); if (!c) return;
+                const r = c.getBoundingClientRect();
+                c.style.setProperty('--ry', (((e.clientX - r.left) / r.width - .5) * 9).toFixed(2) + 'deg');
+                c.style.setProperty('--rx', ((.5 - (e.clientY - r.top) / r.height) * 9).toFixed(2) + 'deg');
+            }, { passive: true });
+            document.addEventListener('mouseout', e => { const c = e.target.closest && e.target.closest('.tilt'); if (c && !c.contains(e.relatedTarget)) { c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); } });
+        }
+
+        /* --- pantalla de entrada con el logo (una vez por visita) --- */
+        let seen = false; try { seen = sessionStorage.getItem('pmSplash'); sessionStorage.setItem('pmSplash', '1'); } catch (e) {}
+        if (!RM() && !seen) {
+            const s = document.createElement('div'); s.id = 'pmSplash';
+            s.innerHTML = '<div class="sp-in">' + PM('sp-mark') + '<div class="sp-word">' + 'PRISMA'.split('').map((l, i) => `<b style="--i:${i}">${l}</b>`).join('') + '</div><div class="sp-tag">Marketing · Finanzas · Sustentabilidad</div></div>';
+            document.body.appendChild(s);
+            const out = () => { if (s.classList.contains('out')) return; s.classList.add('out'); setTimeout(() => { s.remove(); animarPagina(); }, 850); };
+            setTimeout(out, 2600); s.addEventListener('click', out); addEventListener('keydown', out, { once: true });
+        }
+
+        addEventListener('load', () => { moveInd(); if (ind) ind.classList.add('ready'); if (!document.getElementById('pmSplash')) animarPagina(); });
+    })();
+    </script>
+</body>
+</html>
