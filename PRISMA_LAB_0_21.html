@@ -451,7 +451,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink);box
 
     <!-- SIDEBAR -->
 
-    <aside class="sidebar"><div class="brand"><span class="brand-mark" id="brandMark"></span><div class="brand-text"><h1 class="wm">PRISMA</h1><p>Lab 0.21</p></div></div><div class="section-title">Cómo va la empresa</div><button class="nav-item active" onclick="showPage('resumen', this)">Resumen</button><button class="nav-item" onclick="showPage('finanzas', this)">El dinero</button><div class="section-title">De dónde sale</div><button class="nav-item" onclick="showPage('ventas', this)">Ventas</button><button class="nav-item" onclick="showPage('produccion', this)">Producción</button><button class="nav-item" onclick="showPage('ambiente', this)">Digital y ambiente</button><div class="section-title">Qué hacer ahora</div><button class="nav-item" onclick="showPage('consejos', this)">Hallazgos y consejos</button><button class="nav-item" onclick="showPage('simulacion', this)">Probar cambios</button><div class="rail-tag"><span style="--c:#1e90ff;--i:0">Marketing</span><span style="--c:#12a8c9;--i:1">Finanzas</span><span style="--c:#ffcb47;--i:2">Sustentabilidad</span></div></aside>
+    <aside class="sidebar"><div class="brand"><span class="brand-mark" id="brandMark"></span><div class="brand-text"><h1 class="wm">PRISMA</h1><p>Lab 0.21</p></div></div><div class="section-title">Cómo va la empresa</div><button class="nav-item active" onclick="showPage('resumen', this)">Resumen</button><button class="nav-item" onclick="showPage('finanzas', this)">El dinero</button><button class="nav-item" onclick="showPage('planeacion', this)">Planeación financiera <span class="pd-tag calc">NUEVO</span></button><div class="section-title">De dónde sale</div><button class="nav-item" onclick="showPage('ventas', this)">Ventas</button><button class="nav-item" onclick="showPage('produccion', this)">Producción</button><button class="nav-item" onclick="showPage('ambiente', this)">Digital y ambiente</button><div class="section-title">Qué hacer ahora</div><button class="nav-item" onclick="showPage('consejos', this)">Hallazgos y consejos</button><button class="nav-item" onclick="showPage('simulacion', this)">Probar cambios</button><div class="rail-tag"><span style="--c:#1e90ff;--i:0">Marketing</span><span style="--c:#12a8c9;--i:1">Finanzas</span><span style="--c:#ffcb47;--i:2">Sustentabilidad</span></div></aside>
 
     <!-- MAIN -->
 
@@ -877,6 +877,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink);box
                 </div>
                 <div id="prBody"></div>
             </section>
+            <section id="planeacion" class="page">
+                <div class="page-header"><h2>Planeación financiera</h2><p>Presupuestos, precios, escenarios y reporte financiero para tus clientes.</p></div>
+                <div class="card" style="padding:0;overflow:hidden"><iframe title="PRISMA Planeación Financiera" src="PRISMA_Planeacion_Financiera.html" style="display:block;width:100%;height:calc(100vh - 155px);min-height:1050px;border:0;background:#f5f9fd" loading="lazy"></iframe></div>
+            </section>
         </div>
     </main>
 </div>
@@ -985,7 +989,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink);box
        NAVEGACIÓN
     ------------------------------------------------------------------- */
 
-    const GRUPOS = { resumen:['resumen'], finanzas:['finanzas'], ventas:['comercial','growth'], produccion:['produccion','productos'], ambiente:['digital','sustentabilidad'], consejos:['hallazgos','recomendaciones','contexto'], simulacion:['simulacion'] };
+    const GRUPOS = { resumen:['resumen'], finanzas:['finanzas'], planeacion:['planeacion'], ventas:['comercial','growth'], produccion:['produccion','productos'], ambiente:['digital','sustentabilidad'], consejos:['hallazgos','recomendaciones','contexto'], simulacion:['simulacion'] };
     const NAV_RM = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let navBusy = false, navNext = null, navIO = null;
     function moveNavInd(btn) {
